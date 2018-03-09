@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 351 $, $Date: 2008-06-19 08:24:10 +0900 (Thu, 19 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class SslBufferPool {

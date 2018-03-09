@@ -50,7 +50,7 @@ import net.gleamynode.netty.util.ImmediateExecutor;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 382 $, $Date: 2008-06-20 11:39:08 +0900 (Fri, 20 Jun 2008) $
+ * @version $Rev$, $Date$
  */
 public class SslHandler extends FrameDecoder implements DownstreamHandler<ChannelEvent> {
 

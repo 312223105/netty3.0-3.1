@@ -25,7 +25,7 @@ import net.gleamynode.netty.pipeline.PipeContext;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 213 $, $Date: 2008-06-12 12:53:45 +0900 (Thu, 12 Jun 2008) $
+ * @version $Rev$, $Date$
  */
 public class ChannelUpstream {
 

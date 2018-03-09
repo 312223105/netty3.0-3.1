@@ -35,7 +35,7 @@ import net.gleamynode.netty.channel.ChannelStateEvent;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 371 $, $Date: 2008-06-19 20:22:45 +0900 (Thu, 19 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {

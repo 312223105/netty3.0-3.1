@@ -21,7 +21,7 @@ package net.gleamynode.netty.util;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 192 $, $Date: 2008-06-10 12:47:03 +0900 (Tue, 10 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class ConvertUtil {

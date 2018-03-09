@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 238 $, $Date: 2008-06-13 08:49:20 +0900 (Fri, 13 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class ByteArrayBufferWrapper extends ByteArrayWrapper implements

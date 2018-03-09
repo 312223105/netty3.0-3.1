@@ -31,7 +31,7 @@ import net.gleamynode.netty.pipeline.PipeContext;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 346 $, $Date: 2008-06-18 16:50:41 +0900 (Wed, 18 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class ObjectDecoder extends ReplayingDecoder {

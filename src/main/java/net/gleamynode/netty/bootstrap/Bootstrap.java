@@ -41,7 +41,7 @@ import net.gleamynode.netty.pipeline.PipelineFactory;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 384 $, $Date: 2008-06-20 12:20:00 +0900 (Fri, 20 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class Bootstrap {

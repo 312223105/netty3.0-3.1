@@ -27,7 +27,7 @@ import java.io.StreamCorruptedException;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 335 $, $Date: 2008-06-17 14:25:17 +0900 (Tue, 17 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class ObjectDecoderInputStream extends InputStream implements

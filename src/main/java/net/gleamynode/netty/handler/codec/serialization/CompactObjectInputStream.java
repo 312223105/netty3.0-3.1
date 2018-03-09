@@ -28,7 +28,7 @@ import java.io.StreamCorruptedException;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 340 $, $Date: 2008-06-17 17:38:41 +0900 (Tue, 17 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 class CompactObjectInputStream extends ObjectInputStream {

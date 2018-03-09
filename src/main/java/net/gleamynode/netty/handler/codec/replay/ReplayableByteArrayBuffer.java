@@ -40,7 +40,7 @@ import net.gleamynode.netty.array.ReadOnlyByteArrayBuffer;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 354 $, $Date: 2008-06-19 09:02:21 +0900 (Thu, 19 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class ReplayableByteArrayBuffer extends ReadOnlyByteArrayBuffer implements Iterable<ByteArray> {

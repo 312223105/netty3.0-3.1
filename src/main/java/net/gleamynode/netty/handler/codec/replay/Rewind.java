@@ -21,7 +21,7 @@ package net.gleamynode.netty.handler.codec.replay;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 246 $, $Date: 2008-06-13 14:53:24 +0900 (Fri, 13 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 class Rewind extends Error {

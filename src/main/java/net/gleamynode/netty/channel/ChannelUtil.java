@@ -36,6 +36,7 @@ public class ChannelUtil {
         return newPipeline;
     }
 
+    // TODO 分析为什么创建Factory时，需要pipeline实例
     public static PipelineFactory<ChannelEvent> newPipelineFactory(
             final Pipeline<ChannelEvent> pipeline) {
         return new PipelineFactory<ChannelEvent>() {

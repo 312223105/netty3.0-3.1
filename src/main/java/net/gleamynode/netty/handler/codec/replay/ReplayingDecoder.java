@@ -33,7 +33,7 @@ import net.gleamynode.netty.pipeline.PipelineCoverage;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 385 $, $Date: 2008-06-20 13:00:42 +0900 (Fri, 20 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 @PipelineCoverage("one")

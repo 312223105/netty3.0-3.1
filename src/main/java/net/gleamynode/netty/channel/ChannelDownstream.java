@@ -25,7 +25,7 @@ import net.gleamynode.netty.pipeline.PipeContext;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 172 $, $Date: 2008-06-09 16:48:28 +0900 (Mon, 09 Jun 2008) $
+ * @version $Rev$, $Date$
  */
 public class ChannelDownstream {
 

@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 381 $, $Date: 2008-06-20 10:49:42 +0900 (Fri, 20 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class TimeBasedUuidGenerator {

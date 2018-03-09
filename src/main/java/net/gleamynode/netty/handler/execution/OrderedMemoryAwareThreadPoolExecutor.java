@@ -34,7 +34,7 @@ import net.gleamynode.netty.channel.Channel;
  * @author Trustin Lee (trustin@gmail.com)
  * @author David M. Lloyd (david.lloyd@redhat.com)
  *
- * @version $Rev: 210 $, $Date: 2008-06-10 20:52:19 +0900 (Tue, 10 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class OrderedMemoryAwareThreadPoolExecutor extends

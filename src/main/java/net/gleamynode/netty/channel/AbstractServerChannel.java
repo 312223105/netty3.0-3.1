@@ -26,7 +26,7 @@ import net.gleamynode.netty.pipeline.Pipeline;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 162 $, $Date: 2008-06-09 13:55:57 +0900 (Mon, 09 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public abstract class AbstractServerChannel extends AbstractChannel {

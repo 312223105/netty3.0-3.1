@@ -34,7 +34,7 @@ import net.gleamynode.netty.pipeline.Pipeline;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 176 $, $Date: 2008-06-09 18:13:03 +0900 (Mon, 09 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 abstract class NioSocketChannel extends AbstractChannel {

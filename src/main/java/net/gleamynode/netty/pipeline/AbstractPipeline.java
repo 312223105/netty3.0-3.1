@@ -26,7 +26,7 @@ import java.util.NoSuchElementException;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 369 $, $Date: 2008-06-19 19:58:20 +0900 (Thu, 19 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public abstract class AbstractPipeline<E> implements Pipeline<E> {

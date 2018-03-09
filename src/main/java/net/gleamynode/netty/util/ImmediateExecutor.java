@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 349 $, $Date: 2008-06-18 21:58:17 +0900 (Wed, 18 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class ImmediateExecutor implements Executor {

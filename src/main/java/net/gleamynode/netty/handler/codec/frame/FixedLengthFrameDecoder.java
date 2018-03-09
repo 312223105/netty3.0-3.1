@@ -26,7 +26,7 @@ import net.gleamynode.netty.pipeline.PipeContext;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev:231 $, $Date:2008-06-12 16:44:50 +0900 (목, 12 6월 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public class FixedLengthFrameDecoder extends FrameDecoder {

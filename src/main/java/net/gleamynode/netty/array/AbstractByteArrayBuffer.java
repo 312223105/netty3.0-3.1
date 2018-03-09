@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
- * @version $Rev: 241 $, $Date: 2008-06-13 09:55:05 +0900 (Fri, 13 Jun 2008) $
+ * @version $Rev$, $Date$
  *
  */
 public abstract class AbstractByteArrayBuffer extends AbstractByteArray implements ByteArrayBuffer {
