@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
-import static net.gleamynode.netty.channel.ChannelUpstream.*;
+import static net.gleamynode.netty.channel.ChannelUtil.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -32,18 +32,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.gleamynode.netty.channel.AbstractChannelPipelineSink;
+import net.gleamynode.netty.channel.AbstractChannelSink;
 import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFuture;
 import net.gleamynode.netty.channel.ChannelFutureListener;
+import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.ChannelState;
 import net.gleamynode.netty.channel.ChannelStateEvent;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.Pipeline;
 import net.gleamynode.netty.util.NamePreservingRunnable;
 
-class NioClientSocketPipelineSink extends AbstractChannelPipelineSink {
+class NioClientSocketPipelineSink extends AbstractChannelSink {
 
     static final Logger logger =
         Logger.getLogger(NioClientSocketPipelineSink.class.getName());
@@ -65,7 +65,7 @@ class NioClientSocketPipelineSink extends AbstractChannelPipelineSink {
     }
 
     public void elementSunk(
-            Pipeline<ChannelEvent> pipeline, ChannelEvent element) throws Exception {
+            ChannelPipeline pipeline, ChannelEvent element) throws Exception {
         if (element instanceof ChannelStateEvent) {
             ChannelStateEvent event = (ChannelStateEvent) element;
             NioClientSocketChannel channel =

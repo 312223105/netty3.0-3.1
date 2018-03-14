@@ -18,18 +18,18 @@
 package net.gleamynode.netty.handler.execution;
 
 import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.pipeline.PipeContext;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
 
 public class ChannelEventRunnable implements Runnable {
-    private final PipeContext<ChannelEvent> ctx;
+    private final ChannelHandlerContext ctx;
     private final ChannelEvent e;
 
-    public ChannelEventRunnable(PipeContext<ChannelEvent> ctx, ChannelEvent e) {
+    public ChannelEventRunnable(ChannelHandlerContext ctx, ChannelEvent e) {
         this.ctx = ctx;
         this.e = e;
     }
 
-    public PipeContext<ChannelEvent> getContext() {
+    public ChannelHandlerContext getContext() {
         return ctx;
     }
 

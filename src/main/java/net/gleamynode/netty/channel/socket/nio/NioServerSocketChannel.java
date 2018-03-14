@@ -17,24 +17,24 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
-import static net.gleamynode.netty.channel.ChannelUpstream.*;
+import static net.gleamynode.netty.channel.ChannelUtil.*;
 
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.gleamynode.netty.channel.AbstractServerChannel;
-import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
+import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.socket.DefaultServerSocketChannelConfig;
 import net.gleamynode.netty.channel.socket.ServerSocketChannelConfig;
-import net.gleamynode.netty.pipeline.Pipeline;
 
-class NioServerSocketChannel extends AbstractServerChannel {
+class NioServerSocketChannel extends AbstractServerChannel
+                             implements net.gleamynode.netty.channel.socket.ServerSocketChannel {
 
     private static final Logger logger = Logger.getLogger(NioServerSocketChannel.class.getName());
 
@@ -42,7 +42,7 @@ class NioServerSocketChannel extends AbstractServerChannel {
     private final ServerSocketChannelConfig config;
 
     NioServerSocketChannel(
-            ChannelFactory factory, Pipeline<ChannelEvent> pipeline) {
+            ChannelFactory factory, ChannelPipeline pipeline) {
 
         super(factory, pipeline);
 
@@ -76,11 +76,11 @@ class NioServerSocketChannel extends AbstractServerChannel {
         return config;
     }
 
-    public SocketAddress getLocalAddress() {
-        return socket.socket().getLocalSocketAddress();
+    public InetSocketAddress getLocalAddress() {
+        return (InetSocketAddress) socket.socket().getLocalSocketAddress();
     }
 
-    public SocketAddress getRemoteAddress() {
+    public InetSocketAddress getRemoteAddress() {
         return null;
     }
 

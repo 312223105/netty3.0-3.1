@@ -15,11 +15,18 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.channel;
+package net.gleamynode.netty.channel.socket;
 
-import java.net.SocketAddress;
+import net.gleamynode.netty.channel.ChannelFactory;
+import net.gleamynode.netty.channel.ChannelPipeline;
 
-public interface MessageEvent extends ChannelEvent {
-    Object getMessage();
-    SocketAddress getRemoteAddress();
+/**
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
+public interface ClientSocketChannelFactory extends ChannelFactory {
+    SocketChannel newChannel(ChannelPipeline pipeline);
 }

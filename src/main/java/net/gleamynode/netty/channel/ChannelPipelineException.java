@@ -15,25 +15,34 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel;
 
-public class PipelineException extends RuntimeException {
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.hidden
+ */
+public class ChannelPipelineException extends ChannelException {
 
-    private static final long serialVersionUID = 2989009630726364799L;
+    private static final long serialVersionUID = 3379174210419885980L;
 
-    public PipelineException() {
+    public ChannelPipelineException() {
         super();
     }
 
-    public PipelineException(String message, Throwable cause) {
+    public ChannelPipelineException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public PipelineException(String message) {
+    public ChannelPipelineException(String message) {
         super(message);
     }
 
-    public PipelineException(Throwable cause) {
+    public ChannelPipelineException(Throwable cause) {
         super(cause);
     }
 }

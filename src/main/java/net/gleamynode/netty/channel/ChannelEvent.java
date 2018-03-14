@@ -17,6 +17,16 @@
  */
 package net.gleamynode.netty.channel;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ * @apiviz.composedOf net.gleamynode.netty.channel.ChannelFuture
+ */
 public interface ChannelEvent {
     Channel getChannel();
     ChannelFuture getFuture();

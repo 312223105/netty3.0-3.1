@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseimport net.gleamynode.netty3.pipeline.Pipeline;
- can redistribute it and/or
+ * Copyright (C) 2008  Trustin Heuiseung Lee
+ *
+ * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
@@ -16,8 +17,18 @@
  */
 package net.gleamynode.netty.channel;
 
-import net.gleamynode.netty.pipeline.Pipeline;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ * @apiviz.has        net.gleamynode.netty.channel.Channel oneway - - creates
+ * @apiviz.composedOf net.gleamynode.netty.channel.ChannelSink
+ */
 public interface ChannelFactory {
-    Channel newChannel(Pipeline<ChannelEvent> pipeline);
+    Channel newChannel(ChannelPipeline pipeline);
 }

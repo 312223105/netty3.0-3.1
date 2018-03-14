@@ -18,13 +18,26 @@
 package net.gleamynode.netty.channel;
 
 
-import net.gleamynode.netty.pipeline.PipeContext;
-import net.gleamynode.netty.pipeline.UpstreamHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public abstract class ChannelEventHandler implements UpstreamHandler<ChannelEvent> {
+
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ */
+public class SimpleChannelHandler implements ChannelUpstreamHandler {
+
+    private static final Logger logger =
+        Logger.getLogger(SimpleChannelHandler.class.getName());
 
     public void handleUpstream(
-            PipeContext<ChannelEvent> ctx, ChannelEvent e) throws Exception {
+            ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
 
         if (e instanceof MessageEvent) {
             messageReceived(ctx, (MessageEvent) e);
@@ -70,36 +83,62 @@ public abstract class ChannelEventHandler implements UpstreamHandler<ChannelEven
         }
     }
 
-    protected abstract void channelOpen(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception;
+    public void channelBound(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void channelBound(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception;
+    public void channelClosed(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void channelConnected(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception;
+    public void channelConnected(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void messageReceived(
-            PipeContext<ChannelEvent> ctx, MessageEvent e) throws Exception;
+    public void channelInterestChanged(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void channelInterestChanged(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception;
+    public void channelDisconnected(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void channelDisconnected(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception;
+    public void channelOpen(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void channelUnbound(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception;
+    public void channelUnbound(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void channelClosed(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception;
+    public void messageReceived(
+            ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void exceptionCaught(
-            PipeContext<ChannelEvent> ctx, ExceptionEvent e) throws Exception;
+    public void exceptionCaught(
+            ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+        logger.log(
+                Level.WARNING,
+                "EXCEPTION, please implement " + getClass().getName() +
+                ".exceptionCaught() for proper handling.", e.getCause());
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void childChannelOpen(
-            PipeContext<ChannelEvent> ctx, ChildChannelStateEvent e) throws Exception;
+    public void childChannelClosed(
+            ChannelHandlerContext ctx, ChildChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 
-    protected abstract void childChannelClosed(
-            PipeContext<ChannelEvent> ctx, ChildChannelStateEvent e) throws Exception;
+    public void childChannelOpen(
+            ChannelHandlerContext ctx, ChildChannelStateEvent e) throws Exception {
+        ctx.sendUpstream(e);
+    }
 }

@@ -20,8 +20,18 @@ package net.gleamynode.netty.channel;
 import java.net.SocketAddress;
 import java.util.UUID;
 
-import net.gleamynode.netty.pipeline.Pipeline;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ * @apiviz.composedOf net.gleamynode.netty.channel.ChannelConfig
+ * @apiviz.composedOf net.gleamynode.netty.channel.ChannelPipeline
+ */
 public interface Channel {
     static int OP_NONE = 0;
     static int OP_READ = 1;
@@ -32,7 +42,7 @@ public interface Channel {
     ChannelFactory getFactory();
     Channel getParent();
     ChannelConfig getConfig();
-    Pipeline<ChannelEvent> getPipeline();
+    ChannelPipeline getPipeline();
 
     boolean isOpen();
     boolean isBound();

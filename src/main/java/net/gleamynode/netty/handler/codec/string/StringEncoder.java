@@ -20,12 +20,12 @@ package net.gleamynode.netty.handler.codec.string;
 import java.nio.charset.Charset;
 
 import net.gleamynode.netty.array.HeapByteArray;
-import net.gleamynode.netty.channel.ChannelDownstream;
+import net.gleamynode.netty.channel.ChannelDownstreamHandler;
 import net.gleamynode.netty.channel.ChannelEvent;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
+import net.gleamynode.netty.channel.ChannelPipelineCoverage;
+import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.DownstreamHandler;
-import net.gleamynode.netty.pipeline.PipeContext;
-import net.gleamynode.netty.pipeline.PipelineCoverage;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -34,8 +34,8 @@ import net.gleamynode.netty.pipeline.PipelineCoverage;
  * @version $Rev$, $Date$
  *
  */
-@PipelineCoverage("all")
-public class StringEncoder implements DownstreamHandler<ChannelEvent> {
+@ChannelPipelineCoverage("all")
+public class StringEncoder implements ChannelDownstreamHandler {
 
     private final String charsetName;
 
@@ -55,7 +55,7 @@ public class StringEncoder implements DownstreamHandler<ChannelEvent> {
     }
 
     public void handleDownstream(
-            PipeContext<ChannelEvent> context, ChannelEvent element) throws Exception {
+            ChannelHandlerContext context, ChannelEvent element) throws Exception {
         if (!(element instanceof MessageEvent)) {
             context.sendDownstream(element);
             return;
@@ -68,7 +68,7 @@ public class StringEncoder implements DownstreamHandler<ChannelEvent> {
         }
 
         String src = (String) e.getMessage();
-        ChannelDownstream.write(
+        ChannelUtil.write(
                 context, e.getChannel(), e.getFuture(), new HeapByteArray(src.getBytes(charsetName)));
     }
 }

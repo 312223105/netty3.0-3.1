@@ -21,14 +21,13 @@ import net.gleamynode.netty.array.ByteArray;
 import net.gleamynode.netty.array.ByteArrayBuffer;
 import net.gleamynode.netty.array.CompositeByteArray;
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.channel.ChannelEventHandlerAdapter;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
+import net.gleamynode.netty.channel.ChannelPipelineCoverage;
 import net.gleamynode.netty.channel.ChannelStateEvent;
-import net.gleamynode.netty.channel.ChannelUpstream;
+import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.ExceptionEvent;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.PipeContext;
-import net.gleamynode.netty.pipeline.PipelineCoverage;
+import net.gleamynode.netty.channel.SimpleChannelHandler;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -37,14 +36,14 @@ import net.gleamynode.netty.pipeline.PipelineCoverage;
  * @version $Rev$, $Date$
  *
  */
-@PipelineCoverage("one")
-public abstract class FrameDecoder extends ChannelEventHandlerAdapter {
+@ChannelPipelineCoverage("one")
+public abstract class FrameDecoder extends SimpleChannelHandler {
 
     private volatile CompositeByteArray cumulation = new CompositeByteArray();
 
     @Override
-    protected void messageReceived(
-            PipeContext<ChannelEvent> ctx, MessageEvent e) throws Exception {
+    public void messageReceived(
+            ChannelHandlerContext ctx, MessageEvent e) throws Exception {
 
         Object m = e.getMessage();
         if (!(m instanceof ByteArray)) {
@@ -73,21 +72,21 @@ public abstract class FrameDecoder extends ChannelEventHandlerAdapter {
     }
 
     @Override
-    protected void channelDisconnected(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception {
+    public void channelDisconnected(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         cleanup(ctx, e);
     }
 
     @Override
-    protected void exceptionCaught(
-            PipeContext<ChannelEvent> ctx, ExceptionEvent e) throws Exception {
+    public void exceptionCaught(
+            ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
         ctx.sendUpstream(e);
     }
 
     protected abstract Object readFrame(
-            PipeContext<ChannelEvent> ctx, Channel channel, ByteArrayBuffer buffer) throws Exception;
+            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception;
 
-    private void callReadFrame(PipeContext<ChannelEvent> context,
+    private void callReadFrame(ChannelHandlerContext context,
             Channel channel, CompositeByteArray cumulation) throws Exception {
         while (!cumulation.empty()) {
             int oldFirstIndex = cumulation.firstIndex();
@@ -108,18 +107,18 @@ public abstract class FrameDecoder extends ChannelEventHandlerAdapter {
                         "if it returned a frame.");
             }
 
-            ChannelUpstream.fireMessageReceived(context, channel, frame);
+            ChannelUtil.fireMessageReceived(context, channel, frame);
         }
     }
 
-    private void cleanup(PipeContext<ChannelEvent> ctx, ChannelStateEvent e)
+    private void cleanup(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception {
         if (!cumulation.empty()) {
             // Make sure all frames were read before notifying a closed channel.
             callReadFrame(ctx, e.getChannel(), cumulation);
             if (!cumulation.empty()) {
                 // and send the remainders too if necessary.
-                ChannelUpstream.fireMessageReceived(
+                ChannelUtil.fireMessageReceived(
                         ctx, e.getChannel(), cumulation.read(cumulation.length()));
             }
         }

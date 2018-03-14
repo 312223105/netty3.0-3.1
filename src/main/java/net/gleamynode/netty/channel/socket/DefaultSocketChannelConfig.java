@@ -22,9 +22,8 @@ import java.net.SocketException;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelException;
-import net.gleamynode.netty.pipeline.PipelineFactory;
+import net.gleamynode.netty.channel.ChannelPipelineFactory;
 import net.gleamynode.netty.util.ConvertUtil;
 
 public class DefaultSocketChannelConfig implements SocketChannelConfig {
@@ -65,7 +64,7 @@ public class DefaultSocketChannelConfig implements SocketChannelConfig {
         } else if (key.equals("connectTimeoutMillis")) {
             setConnectTimeoutMillis(ConvertUtil.toInt(value));
         } else if (key.equals("pipelineFactory")) {
-            setPipelineFactory(toPipelineFactory(value));
+            setPipelineFactory((ChannelPipelineFactory) value);
         } else {
             return false;
         }
@@ -197,7 +196,7 @@ public class DefaultSocketChannelConfig implements SocketChannelConfig {
         return connectTimeoutMillis;
     }
 
-    public PipelineFactory<ChannelEvent> getPipelineFactory() {
+    public ChannelPipelineFactory getPipelineFactory() {
         return null;
     }
 
@@ -212,16 +211,11 @@ public class DefaultSocketChannelConfig implements SocketChannelConfig {
         this.connectTimeoutMillis = connectTimeoutMillis;
     }
 
-    public void setPipelineFactory(PipelineFactory<ChannelEvent> pipelineFactory) {
+    public void setPipelineFactory(ChannelPipelineFactory pipelineFactory) {
         // Unused
     }
 
     public void setWriteTimeoutMillis(int writeTimeoutMillis) {
         // Unused
-    }
-
-    @SuppressWarnings("unchecked")
-    private static PipelineFactory<ChannelEvent> toPipelineFactory(Object value) {
-        return (PipelineFactory<ChannelEvent>) value;
     }
 }

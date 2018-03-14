@@ -17,18 +17,17 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
-import static net.gleamynode.netty.channel.ChannelUpstream.*;
+import static net.gleamynode.netty.channel.ChannelUtil.*;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
-import net.gleamynode.netty.pipeline.Pipeline;
+import net.gleamynode.netty.channel.ChannelPipeline;
 
 class NioClientSocketChannel extends NioSocketChannel {
 
@@ -70,7 +69,7 @@ class NioClientSocketChannel extends NioSocketChannel {
     volatile boolean boundManually;
 
     NioClientSocketChannel(
-            ChannelFactory factory, Pipeline<ChannelEvent> pipeline) {
+            ChannelFactory factory, ChannelPipeline pipeline) {
 
         super(null, factory, pipeline, newSocket());
         fireChannelOpen(this);

@@ -37,6 +37,9 @@ import net.gleamynode.netty.channel.ChannelStateEvent;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.landmark
+ * @apiviz.uses net.gleamynode.netty.handler.execution.ObjectSizeEstimator
+ * @apiviz.uses net.gleamynode.netty.handler.execution.ChannelEventRunnable
  */
 public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
 

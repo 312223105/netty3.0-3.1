@@ -20,12 +20,22 @@ package net.gleamynode.netty.handler.execution;
 import java.util.concurrent.Executor;
 
 import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.pipeline.PipeContext;
-import net.gleamynode.netty.pipeline.PipelineCoverage;
-import net.gleamynode.netty.pipeline.UpstreamHandler;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
+import net.gleamynode.netty.channel.ChannelPipelineCoverage;
+import net.gleamynode.netty.channel.ChannelUpstreamHandler;
 
-@PipelineCoverage("all")
-public class ExecutionHandler implements UpstreamHandler<ChannelEvent> {
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ * @apiviz.has java.util.concurrent.ThreadPoolExecutor
+ */
+@ChannelPipelineCoverage("all")
+public class ExecutionHandler implements ChannelUpstreamHandler {
 
     private final Executor executor;
 
@@ -41,7 +51,7 @@ public class ExecutionHandler implements UpstreamHandler<ChannelEvent> {
     }
 
     public void handleUpstream(
-            PipeContext<ChannelEvent> context, ChannelEvent element) throws Exception {
+            ChannelHandlerContext context, ChannelEvent element) throws Exception {
         executor.execute(new ChannelEventRunnable(context, element));
     }
 }

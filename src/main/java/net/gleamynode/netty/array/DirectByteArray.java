@@ -19,7 +19,15 @@ package net.gleamynode.netty.array;
 
 import java.nio.ByteBuffer;
 
-
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ */
 public class DirectByteArray extends ByteBufferBackedByteArray {
     public DirectByteArray(int length) {
         super(ByteBuffer.allocateDirect(length));

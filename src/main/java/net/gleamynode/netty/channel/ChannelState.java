@@ -17,6 +17,14 @@
  */
 package net.gleamynode.netty.channel;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
 public enum ChannelState {
     OPEN,
     BOUND,

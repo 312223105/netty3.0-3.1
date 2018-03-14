@@ -15,9 +15,21 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel.socket;
 
-public interface PipelineSink<E> {
-    void elementSunk(Pipeline<E> pipeline, E element) throws Exception;
-    void exceptionCaught(Pipeline<E> pipeline, E element, PipelineException cause) throws Exception;
+import java.net.InetSocketAddress;
+
+import net.gleamynode.netty.channel.Channel;
+
+/**
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
+public interface SocketChannel extends Channel {
+    SocketChannelConfig getConfig();
+    InetSocketAddress getLocalAddress();
+    InetSocketAddress getRemoteAddress();
 }

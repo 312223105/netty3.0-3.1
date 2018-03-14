@@ -21,16 +21,22 @@ import java.net.SocketAddress;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import net.gleamynode.netty.pipeline.Pipeline;
 import net.gleamynode.netty.util.TimeBasedUuidGenerator;
 
-
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
 public abstract class AbstractChannel implements Channel, Comparable<Channel> {
 
     private final UUID id = TimeBasedUuidGenerator.generate();
     private final Channel parent;
     private final ChannelFactory factory;
-    private final Pipeline<ChannelEvent> pipeline;
+    private final ChannelPipeline pipeline;
     private final ChannelFuture succeededFuture = new SucceededChannelFuture(this);
 
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -38,7 +44,7 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
 
     protected AbstractChannel(
             Channel parent, ChannelFactory factory,
-            Pipeline<ChannelEvent> pipeline) {
+            ChannelPipeline pipeline) {
 
         this.parent = parent;
         this.factory = factory;
@@ -57,7 +63,7 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
         return factory;
     }
 
-    public Pipeline<ChannelEvent> getPipeline() {
+    public ChannelPipeline getPipeline() {
         return pipeline;
     }
 
@@ -92,19 +98,19 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
     }
 
     public ChannelFuture bind(SocketAddress localAddress) {
-        return ChannelDownstream.bind(this, localAddress);
+        return ChannelUtil.bind(this, localAddress);
     }
 
     public ChannelFuture close() {
-        return ChannelDownstream.close(this);
+        return ChannelUtil.close(this);
     }
 
     public ChannelFuture connect(SocketAddress remoteAddress) {
-        return ChannelDownstream.connect(this, remoteAddress);
+        return ChannelUtil.connect(this, remoteAddress);
     }
 
     public ChannelFuture disconnect() {
-        return ChannelDownstream.disconnect(this);
+        return ChannelUtil.disconnect(this);
     }
 
     public int getInterestOps() {
@@ -112,7 +118,7 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
     }
 
     public ChannelFuture setInterestOps(int interestOps) {
-        return ChannelDownstream.setInterestOps(this, interestOps);
+        return ChannelUtil.setInterestOps(this, interestOps);
     }
 
     protected void setInterestOpsNow(int interestOps) {
@@ -136,11 +142,11 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
     }
 
     public ChannelFuture write(Object message) {
-        return ChannelDownstream.write(this, message);
+        return ChannelUtil.write(this, message);
     }
 
     public ChannelFuture write(Object message, SocketAddress remoteAddress) {
-        return ChannelDownstream.write(this, message, remoteAddress);
+        return ChannelUtil.write(this, message, remoteAddress);
     }
 
     @Override

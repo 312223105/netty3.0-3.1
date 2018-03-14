@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUpstream.*;
+import static net.gleamynode.netty.channel.ChannelUtil.*;
 
 import java.io.OutputStream;
 import java.io.PushbackInputStream;

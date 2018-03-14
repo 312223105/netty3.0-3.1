@@ -23,6 +23,17 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @see ByteArrayOutputStream
+ * @see ByteArrayBufferInputStream
+ * @apiviz.uses net.gleamynode.netty.array.ByteArray
+ */
 public class ByteArrayInputStream extends InputStream implements DataInput {
 
     private final ByteArray array;

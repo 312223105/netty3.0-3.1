@@ -1,14 +1,12 @@
 /*
  * Copyright (C) 2008  Trustin Heuiseung Lee
  *
-import java.util.concurrent.Executor;
-
-import net.gleamynode.netty3.channel.Channel;
-import net.gleamynode.netty3.channel.ChannelEvent;
-import net.gleamynode.netty3.channel.ChannelFactory;
-import net.gleamynode.netty3.pipeline.Pipeline;
-import net.gleamynode.netty3.pipeline.PipelineSink;
-buted in the hope that it will be useful,
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
@@ -21,15 +19,14 @@ package net.gleamynode.netty.channel.socket.nio;
 
 import java.util.concurrent.Executor;
 
-import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.channel.ChannelFactory;
-import net.gleamynode.netty.pipeline.Pipeline;
-import net.gleamynode.netty.pipeline.PipelineSink;
+import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelSink;
+import net.gleamynode.netty.channel.socket.SocketChannel;
+import net.gleamynode.netty.channel.socket.ClientSocketChannelFactory;
 
-public class NioClientSocketChannelFactory implements ChannelFactory {
+public class NioClientSocketChannelFactory implements ClientSocketChannelFactory {
 
-    final PipelineSink<ChannelEvent> sink;
+    final ChannelSink sink;
 
     public NioClientSocketChannelFactory(
             Executor bossExecutor, Executor workerExecutor) {
@@ -53,7 +50,7 @@ public class NioClientSocketChannelFactory implements ChannelFactory {
         sink = new NioClientSocketPipelineSink(bossExecutor, workerExecutor, workerCount);
     }
 
-    public Channel newChannel(Pipeline<ChannelEvent> pipeline) {
+    public SocketChannel newChannel(ChannelPipeline pipeline) {
         pipeline.setSink(sink);
         return new NioClientSocketChannel(this, pipeline);
     }

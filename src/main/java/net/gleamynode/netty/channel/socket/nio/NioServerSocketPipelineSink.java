@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
-import static net.gleamynode.netty.channel.ChannelUpstream.*;
+import static net.gleamynode.netty.channel.ChannelUtil.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -28,17 +28,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.gleamynode.netty.channel.AbstractChannelPipelineSink;
+import net.gleamynode.netty.channel.AbstractChannelSink;
 import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelFuture;
+import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.ChannelState;
 import net.gleamynode.netty.channel.ChannelStateEvent;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.Pipeline;
 import net.gleamynode.netty.util.NamePreservingRunnable;
 
-class NioServerSocketPipelineSink extends AbstractChannelPipelineSink {
+class NioServerSocketPipelineSink extends AbstractChannelSink {
 
     static final Logger logger =
         Logger.getLogger(NioServerSocketPipelineSink.class.getName());
@@ -56,7 +56,7 @@ class NioServerSocketPipelineSink extends AbstractChannelPipelineSink {
     }
 
     public void elementSunk(
-            Pipeline<ChannelEvent> pipeline, ChannelEvent element) throws Exception {
+            ChannelPipeline pipeline, ChannelEvent element) throws Exception {
         Channel channel = element.getChannel();
         if (channel instanceof NioServerSocketChannel) {
             handleServerSocket(element);
@@ -191,7 +191,7 @@ class NioServerSocketPipelineSink extends AbstractChannelPipelineSink {
                 try {
                     SocketChannel acceptedSocket = channel.socket.accept();
                     try {
-                        Pipeline<ChannelEvent> pipeline =
+                        ChannelPipeline pipeline =
                             channel.getConfig().getPipelineFactory().getPipeline();
                         pipeline.setSink(
                                 ((NioServerSocketChannelFactory) channel.getFactory()).sink);

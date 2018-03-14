@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUpstream.*;
+import static net.gleamynode.netty.channel.ChannelUtil.*;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -27,17 +27,17 @@ import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.gleamynode.netty.channel.AbstractChannelPipelineSink;
+import net.gleamynode.netty.channel.AbstractChannelSink;
 import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelFuture;
+import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.ChannelState;
 import net.gleamynode.netty.channel.ChannelStateEvent;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.Pipeline;
 import net.gleamynode.netty.util.NamePreservingRunnable;
 
-class OioServerSocketPipelineSink extends AbstractChannelPipelineSink {
+class OioServerSocketPipelineSink extends AbstractChannelSink {
 
     static final Logger logger =
         Logger.getLogger(OioServerSocketPipelineSink.class.getName());
@@ -49,7 +49,7 @@ class OioServerSocketPipelineSink extends AbstractChannelPipelineSink {
     }
 
     public void elementSunk(
-            Pipeline<ChannelEvent> pipeline, ChannelEvent element) throws Exception {
+            ChannelPipeline pipeline, ChannelEvent element) throws Exception {
         Channel channel = element.getChannel();
         if (channel instanceof OioServerSocketChannel) {
             handleServerSocket(element);
@@ -180,7 +180,7 @@ class OioServerSocketPipelineSink extends AbstractChannelPipelineSink {
                 try {
                     Socket acceptedSocket = channel.socket.accept();
                     try {
-                        Pipeline<ChannelEvent> pipeline =
+                        ChannelPipeline pipeline =
                             channel.getConfig().getPipelineFactory().getPipeline();
                         pipeline.setSink(
                                 ((OioServerSocketChannelFactory) channel.getFactory()).sink);

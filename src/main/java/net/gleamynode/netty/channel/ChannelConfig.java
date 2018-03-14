@@ -19,12 +19,20 @@ package net.gleamynode.netty.channel;
 
 import java.util.Map;
 
-import net.gleamynode.netty.pipeline.PipelineFactory;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.has net.gleamynode.netty.channel.ChannelPipelineFactory
+ */
 public interface ChannelConfig {
     void setOptions(Map<String, Object> options);
-    PipelineFactory<ChannelEvent> getPipelineFactory();
-    void setPipelineFactory(PipelineFactory<ChannelEvent> pipelineFactory);
+    ChannelPipelineFactory getPipelineFactory();
+    void setPipelineFactory(ChannelPipelineFactory pipelineFactory);
     int getConnectTimeoutMillis();
     void setConnectTimeoutMillis(int connectTimeoutMillis);
     int getWriteTimeoutMillis();

@@ -15,12 +15,18 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel.socket;
 
+import net.gleamynode.netty.channel.ChannelFactory;
+import net.gleamynode.netty.channel.ChannelPipeline;
 
-public interface Pipe<E> {
-    String getName();
-    PipeHandler<E> getHandler();
-    boolean canHandleUpstream();
-    boolean canHandleDownstream();
+/**
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
+public interface ServerSocketChannelFactory extends ChannelFactory {
+    ServerSocketChannel newChannel(ChannelPipeline pipeline);
 }

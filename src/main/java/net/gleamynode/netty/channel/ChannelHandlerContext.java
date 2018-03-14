@@ -15,29 +15,27 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 /**
+ *
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.hidden
+ * @apiviz.owns net.gleamynode.netty.channel.ChannelHandler
  */
-@Inherited
-@Documented
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface PipelineCoverage {
-    public static final String ALL = "all";
-    public static final String ONE = "one";
+public interface ChannelHandlerContext {
+    ChannelPipeline getChain();
 
-    String value();
+    String getName();
+    ChannelHandler getHandler();
+    boolean canHandleUpstream();
+    boolean canHandleDownstream();
+
+    void sendUpstream(ChannelEvent element);
+    void sendDownstream(ChannelEvent element);
 }

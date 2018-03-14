@@ -17,6 +17,15 @@
  */
 package net.gleamynode.netty.channel;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.hidden
+ */
 public class ChannelException extends RuntimeException {
 
     private static final long serialVersionUID = 2908618315971075004L;

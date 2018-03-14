@@ -15,7 +15,8 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel;
+
 
 /**
  *
@@ -24,8 +25,9 @@ package net.gleamynode.netty.pipeline;
  *
  * @version $Rev$, $Date$
  *
- * @param <E>
+ * @apiviz.uses net.gleamynode.netty.channel.ChannelPipeline - - sends upstream events
  */
-public interface PipeHandler<E> {
-    // Thsi is a tag interface.
+public interface ChannelSink {
+    void elementSunk(ChannelPipeline chain, ChannelEvent e) throws Exception;
+    void exceptionCaught(ChannelPipeline chain, ChannelEvent e, ChannelPipelineException cause) throws Exception;
 }

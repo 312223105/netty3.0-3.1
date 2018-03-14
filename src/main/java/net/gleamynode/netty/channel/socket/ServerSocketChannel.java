@@ -15,17 +15,21 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel.socket;
+
+import java.net.InetSocketAddress;
+
+import net.gleamynode.netty.channel.Channel;
 
 /**
- *
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
  *
- * @param <E>
  */
-public interface UpstreamHandler<E> extends PipeHandler<E> {
-    void handleUpstream(PipeContext<E> context, E element) throws Exception;
+public interface ServerSocketChannel extends Channel {
+    ServerSocketChannelConfig getConfig();
+    InetSocketAddress getLocalAddress();
+    InetSocketAddress getRemoteAddress();
 }

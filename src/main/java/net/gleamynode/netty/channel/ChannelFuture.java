@@ -19,6 +19,16 @@ package net.gleamynode.netty.channel;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ * @apiviz.owns net.gleamynode.netty.channel.ChannelFutureListener - - notifies
+ */
 public interface ChannelFuture {
     Channel getChannel();
 

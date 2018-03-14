@@ -17,19 +17,15 @@
  */
 package net.gleamynode.netty.channel;
 
-import net.gleamynode.netty.pipeline.Pipeline;
-import net.gleamynode.netty.pipeline.PipelineException;
-import net.gleamynode.netty.pipeline.PipelineSink;
 
-public abstract class AbstractChannelPipelineSink implements PipelineSink<ChannelEvent> {
-
-    public void exceptionCaught(Pipeline<ChannelEvent> pipeline,
-            ChannelEvent event, PipelineException cause) throws Exception {
-        Throwable actualCause = cause.getCause();
-        if (actualCause == null) {
-            actualCause = cause;
-        }
-
-        ChannelUpstream.fireExceptionCaught(event.getChannel(), actualCause);
-    }
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
+public interface ChannelUpstreamHandler extends ChannelHandler {
+    void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception;
 }

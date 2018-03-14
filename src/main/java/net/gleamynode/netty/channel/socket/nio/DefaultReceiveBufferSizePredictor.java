@@ -20,7 +20,7 @@ package net.gleamynode.netty.channel.socket.nio;
 public class DefaultReceiveBufferSizePredictor implements
         ReceiveBufferSizePredictor {
     private static final int MINIMUM = 256;
-    private static final int MAXIMUM = 1048576 * 16;  // Can you reach here?
+    private static final int MAXIMUM = 1048576;
 
     private int nextReceiveBufferSize = 1024;
     private boolean shouldHalveNow;

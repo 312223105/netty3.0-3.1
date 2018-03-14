@@ -15,8 +15,18 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel;
 
-public interface PipelineFactory<E> {
-    Pipeline<E> getPipeline() throws Exception;
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ * @apiviz.uses net.gleamynode.netty.channel.ChannelUtil - - optional yet useful
+ */
+public interface ChannelHandler {
+    // Thsi is a tag interface.
 }

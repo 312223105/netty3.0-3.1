@@ -20,8 +20,7 @@ package net.gleamynode.netty.handler.codec.frame;
 import net.gleamynode.netty.array.ByteArray;
 import net.gleamynode.netty.array.ByteArrayBuffer;
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.pipeline.PipeContext;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -29,6 +28,7 @@ import net.gleamynode.netty.pipeline.PipeContext;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.uses net.gleamynode.netty.handler.codec.frame.Delimiters - - optional yet useful
  */
 public class DelimiterBasedFrameDecoder extends FrameDecoder {
 
@@ -61,7 +61,7 @@ public class DelimiterBasedFrameDecoder extends FrameDecoder {
 
     @Override
     protected Object readFrame(
-            PipeContext<ChannelEvent> ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
+            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
         // Try all delimiters.
         for (ByteArray delim: delimiters) {
             int delimIndex = indexOf(buffer, delim);

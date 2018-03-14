@@ -43,13 +43,13 @@ import net.gleamynode.netty.array.ReadOnlyByteArrayBuffer;
  * @version $Rev$, $Date$
  *
  */
-public class ReplayableByteArrayBuffer extends ReadOnlyByteArrayBuffer implements Iterable<ByteArray> {
+class ReplayableByteArrayBuffer extends ReadOnlyByteArrayBuffer implements Iterable<ByteArray> {
 
     private final List<Object> returnValues = new ArrayList<Object>(128);
     private int currentIndex;
     private int firstIndex;
 
-    public ReplayableByteArrayBuffer() {
+    ReplayableByteArrayBuffer() {
         super(new CompositeByteArray());
     }
 

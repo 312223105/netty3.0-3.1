@@ -28,14 +28,12 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.channel.ChannelEventHandlerAdapter;
 import net.gleamynode.netty.channel.ChannelFactory;
+import net.gleamynode.netty.channel.ChannelHandler;
+import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelPipelineFactory;
 import net.gleamynode.netty.channel.ChannelUtil;
-import net.gleamynode.netty.pipeline.Pipe;
-import net.gleamynode.netty.pipeline.PipeHandler;
-import net.gleamynode.netty.pipeline.Pipeline;
-import net.gleamynode.netty.pipeline.PipelineFactory;
+import net.gleamynode.netty.channel.SimpleChannelHandler;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -43,14 +41,15 @@ import net.gleamynode.netty.pipeline.PipelineFactory;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.uses net.gleamynode.netty.channel.ChannelFactory
  */
 public class Bootstrap {
 
     private static Logger logger = Logger.getLogger(Bootstrap.class.getName());
 
     private volatile ChannelFactory factory;
-    private volatile Pipeline<ChannelEvent> pipeline = ChannelUtil.newPipeline();
-    private volatile PipelineFactory<ChannelEvent> pipelineFactory =
+    private volatile ChannelPipeline pipeline = ChannelUtil.newPipeline();
+    private volatile ChannelPipelineFactory pipelineFactory =
         ChannelUtil.newPipelineFactory(pipeline);
     private volatile Map<String, Object> options = new HashMap<String, Object>();
 
@@ -82,56 +81,51 @@ public class Bootstrap {
         this.factory = factory;
     }
 
-    public Pipeline<ChannelEvent> getPipeline() {
+    public ChannelPipeline getPipeline() {
         return pipeline;
     }
 
-    public void setPipeline(Pipeline<ChannelEvent> pipeline) {
+    public void setPipeline(ChannelPipeline pipeline) {
         if (pipeline == null) {
             throw new NullPointerException("pipeline");
         }
-        this.pipeline = pipeline;
+        pipeline = this.pipeline;
         pipelineFactory = ChannelUtil.newPipelineFactory(pipeline);
     }
 
-    public Map<String, PipeHandler<ChannelEvent>> getPipelineAsMap() {
-        Pipeline<ChannelEvent> pipeline = this.pipeline;
+    public Map<String, ChannelHandler> getPipelineAsMap() {
+        ChannelPipeline pipeline = this.pipeline;
         if (pipeline == null) {
             throw new IllegalStateException("pipelineFactory in use");
         }
-
-        Map<String, PipeHandler<ChannelEvent>> map =
-            new LinkedHashMap<String, PipeHandler<ChannelEvent>>();
-        for (Pipe<ChannelEvent> p: pipeline) {
-            map.put(p.getName(), p.getHandler());
-        }
-        return map;
+        return pipeline.toMap();
     }
 
-    public void setPipelineAsMap(Map<String, PipeHandler<ChannelEvent>> pipelineMap) {
+    public void setPipelineAsMap(Map<String, ChannelHandler> pipelineMap) {
         if (pipelineMap == null) {
             throw new NullPointerException("pipelineMap");
         }
 
         if (!isOrderedMap(pipelineMap)) {
             throw new IllegalArgumentException(
-                    "filters is not an ordered map. Please try " +
+                    "pipelineMap is not an ordered map. " +
+                    "Please use " +
                     LinkedHashMap.class.getName() + ".");
         }
 
-        Pipeline<ChannelEvent> pipeline = ChannelUtil.newPipeline();
-        for(Map.Entry<String, PipeHandler<ChannelEvent>> e: pipelineMap.entrySet()) {
+        ChannelPipeline pipeline = ChannelUtil.newPipeline();
+        for(Map.Entry<String, ChannelHandler> e: pipelineMap.entrySet()) {
             pipeline.addLast(e.getKey(), e.getValue());
         }
 
         setPipeline(pipeline);
     }
 
-    public PipelineFactory<ChannelEvent> getPipelineFactory() {
+    public ChannelPipelineFactory getPipelineFactory() {
         return pipelineFactory;
     }
 
-    public void setPipelineFactory(PipelineFactory<ChannelEvent> pipelineFactory) {
+    public void setPipelineFactory(ChannelPipelineFactory pipelineFactory) {
         if (pipelineFactory == null) {
             throw new NullPointerException("pipelineFactory");
         }
@@ -168,8 +162,8 @@ public class Bootstrap {
         }
     }
 
-    private static boolean isOrderedMap(Map<String, PipeHandler<ChannelEvent>> map) {
-        Class<Map<String, PipeHandler<ChannelEvent>>> mapType = getMapClass(map);
+    private static boolean isOrderedMap(Map<String, ChannelHandler> map) {
+        Class<Map<String, ChannelHandler>> mapType = getMapClass(map);
         if (LinkedHashMap.class.isAssignableFrom(mapType)) {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(mapType.getSimpleName() + " is an ordered map.");
@@ -213,7 +207,7 @@ public class Bootstrap {
                 "default constructor and test if insertion order is " +
                 "maintained.");
 
-        Map<String, PipeHandler<ChannelEvent>> newMap;
+        Map<String, ChannelHandler> newMap;
         try {
             newMap = mapType.newInstance();
         } catch (Exception e) {
@@ -228,7 +222,7 @@ public class Bootstrap {
 
         Random rand = new Random();
         List<String> expectedNames = new ArrayList<String>();
-        PipeHandler<ChannelEvent> dummyHandler = new ChannelEventHandlerAdapter();
+        ChannelHandler dummyHandler = new SimpleChannelHandler();
         for (int i = 0; i < 65536; i ++) {
             String filterName;
             do {
@@ -259,8 +253,8 @@ public class Bootstrap {
     }
 
     @SuppressWarnings("unchecked")
-    private static Class<Map<String, PipeHandler<ChannelEvent>>> getMapClass(
-            Map<String, PipeHandler<ChannelEvent>> map) {
-        return (Class<Map<String, PipeHandler<ChannelEvent>>>) map.getClass();
+    private static Class<Map<String, ChannelHandler>> getMapClass(
+            Map<String, ChannelHandler> map) {
+        return (Class<Map<String, ChannelHandler>>) map.getClass();
     }
 }

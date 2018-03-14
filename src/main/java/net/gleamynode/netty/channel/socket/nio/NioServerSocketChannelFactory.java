@@ -19,16 +19,15 @@ package net.gleamynode.netty.channel.socket.nio;
 
 import java.util.concurrent.Executor;
 
-import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.channel.ChannelFactory;
-import net.gleamynode.netty.pipeline.Pipeline;
-import net.gleamynode.netty.pipeline.PipelineSink;
+import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelSink;
+import net.gleamynode.netty.channel.socket.ServerSocketChannel;
+import net.gleamynode.netty.channel.socket.ServerSocketChannelFactory;
 
-public class NioServerSocketChannelFactory implements ChannelFactory {
+public class NioServerSocketChannelFactory implements ServerSocketChannelFactory {
 
     final Executor bossExecutor;
-    final PipelineSink<ChannelEvent> sink;
+    final ChannelSink sink;
 
     public NioServerSocketChannelFactory(
             Executor bossExecutor, Executor workerExecutor) {
@@ -53,7 +52,7 @@ public class NioServerSocketChannelFactory implements ChannelFactory {
         sink = new NioServerSocketPipelineSink(workerExecutor, workerCount);
     }
 
-    public Channel newChannel(Pipeline<ChannelEvent> pipeline) {
+    public ServerSocketChannel newChannel(ChannelPipeline pipeline) {
         pipeline.setSink(sink);
         return new NioServerSocketChannel(this, pipeline);
     }

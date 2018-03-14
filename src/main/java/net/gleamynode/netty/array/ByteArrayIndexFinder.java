@@ -24,6 +24,7 @@ package net.gleamynode.netty.array;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.uses net.gleamynode.netty.array.ByteArray
  */
 public interface ByteArrayIndexFinder {
 

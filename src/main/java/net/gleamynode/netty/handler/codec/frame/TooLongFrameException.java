@@ -23,6 +23,7 @@ package net.gleamynode.netty.handler.codec.frame;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.hidden
  */
 public class TooLongFrameException extends Exception {
 

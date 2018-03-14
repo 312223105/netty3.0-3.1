@@ -19,8 +19,7 @@ package net.gleamynode.netty.handler.codec.frame;
 
 import net.gleamynode.netty.array.ByteArrayBuffer;
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.pipeline.PipeContext;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -43,7 +42,7 @@ public class FixedLengthFrameDecoder extends FrameDecoder {
 
     @Override
     protected Object readFrame(
-            PipeContext<ChannelEvent> ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
+            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
         if (buffer.length() < frameLength) {
             return null;
         } else {

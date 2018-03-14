@@ -18,7 +18,15 @@
 package net.gleamynode.netty.array;
 
 
-
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ */
 public class StaticPartialByteArray extends PartialByteArray {
 
     private final int firstIndex;

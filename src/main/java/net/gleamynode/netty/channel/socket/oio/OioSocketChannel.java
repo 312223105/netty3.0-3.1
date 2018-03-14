@@ -19,19 +19,21 @@ package net.gleamynode.netty.channel.socket.oio;
 
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 
 import net.gleamynode.netty.channel.AbstractChannel;
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
+import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.socket.DefaultSocketChannelConfig;
+import net.gleamynode.netty.channel.socket.SocketChannel;
 import net.gleamynode.netty.channel.socket.SocketChannelConfig;
-import net.gleamynode.netty.pipeline.Pipeline;
 
-abstract class OioSocketChannel extends AbstractChannel {
+abstract class OioSocketChannel extends AbstractChannel
+                                implements SocketChannel {
 
     final Socket socket;
     private final SocketChannelConfig config;
@@ -40,7 +42,7 @@ abstract class OioSocketChannel extends AbstractChannel {
     OioSocketChannel(
             Channel parent,
             ChannelFactory factory,
-            Pipeline<ChannelEvent> pipeline, Socket socket) {
+            ChannelPipeline pipeline, Socket socket) {
 
         super(parent, factory, pipeline);
 
@@ -52,12 +54,12 @@ abstract class OioSocketChannel extends AbstractChannel {
         return config;
     }
 
-    public SocketAddress getLocalAddress() {
-        return socket.getLocalSocketAddress();
+    public InetSocketAddress getLocalAddress() {
+        return (InetSocketAddress) socket.getLocalSocketAddress();
     }
 
-    public SocketAddress getRemoteAddress() {
-        return socket.getRemoteSocketAddress();
+    public InetSocketAddress getRemoteAddress() {
+        return (InetSocketAddress) socket.getRemoteSocketAddress();
     }
 
     public boolean isBound() {

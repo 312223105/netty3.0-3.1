@@ -17,6 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
@@ -24,11 +25,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import net.gleamynode.netty.channel.AbstractChannel;
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
+import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.Pipeline;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -37,7 +37,8 @@ import net.gleamynode.netty.pipeline.Pipeline;
  * @version $Rev$, $Date$
  *
  */
-abstract class NioSocketChannel extends AbstractChannel {
+abstract class NioSocketChannel extends AbstractChannel
+                                implements net.gleamynode.netty.channel.socket.SocketChannel {
 
     final SocketChannel socket;
     private final NioSocketChannelConfig config;
@@ -49,7 +50,7 @@ abstract class NioSocketChannel extends AbstractChannel {
 
     public NioSocketChannel(
             Channel parent, ChannelFactory factory,
-            Pipeline<ChannelEvent> pipeline, SocketChannel socket) {
+            ChannelPipeline pipeline, SocketChannel socket) {
         super(parent, factory, pipeline);
 
         this.socket = socket;
@@ -63,12 +64,12 @@ abstract class NioSocketChannel extends AbstractChannel {
         return config;
     }
 
-    public SocketAddress getLocalAddress() {
-        return socket.socket().getLocalSocketAddress();
+    public InetSocketAddress getLocalAddress() {
+        return (InetSocketAddress) socket.socket().getLocalSocketAddress();
     }
 
-    public SocketAddress getRemoteAddress() {
-        return socket.socket().getRemoteSocketAddress();
+    public InetSocketAddress getRemoteAddress() {
+        return (InetSocketAddress) socket.socket().getRemoteSocketAddress();
     }
 
     public boolean isBound() {

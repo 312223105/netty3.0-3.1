@@ -15,12 +15,17 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel;
 
-public interface PipeContext<E> {
-    Pipeline<E> getPipeline();
-    Pipe<E> getPipe();
-
-    void sendUpstream(E element);
-    void sendDownstream(E element);
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.has net.gleamynode.netty.channel.ChannelPipeline oneway - - creates
+ */
+public interface ChannelPipelineFactory {
+    ChannelPipeline getPipeline() throws Exception;
 }

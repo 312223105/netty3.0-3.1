@@ -32,18 +32,18 @@ import net.gleamynode.netty.array.ByteArray;
 import net.gleamynode.netty.array.ByteArrayBuffer;
 import net.gleamynode.netty.array.HeapByteArray;
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelDownstream;
+import net.gleamynode.netty.channel.ChannelDownstreamHandler;
 import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelFuture;
 import net.gleamynode.netty.channel.ChannelFutureListener;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
 import net.gleamynode.netty.channel.ChannelStateEvent;
+import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.DefaultChannelFuture;
 import net.gleamynode.netty.channel.DefaultMessageEvent;
 import net.gleamynode.netty.channel.MessageEvent;
 import net.gleamynode.netty.channel.SucceededChannelFuture;
 import net.gleamynode.netty.handler.codec.frame.FrameDecoder;
-import net.gleamynode.netty.pipeline.DownstreamHandler;
-import net.gleamynode.netty.pipeline.PipeContext;
 import net.gleamynode.netty.util.ImmediateExecutor;
 
 /**
@@ -51,8 +51,10 @@ import net.gleamynode.netty.util.ImmediateExecutor;
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
+ *
+ * @apiviz.uses net.gleamynode.netty.handler.ssl.SslBufferPool
  */
-public class SslHandler extends FrameDecoder implements DownstreamHandler<ChannelEvent> {
+public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler {
 
     private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 
@@ -141,24 +143,24 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
             }
         }
 
-        PipeContext<ChannelEvent> ctx = context(channel);
+        ChannelHandlerContext ctx = context(channel);
         engine.beginHandshake();
         wrapNonAppData(ctx, channel);
         return handshakeFuture;
     }
 
     public ChannelFuture close(Channel channel) throws SSLException {
-        PipeContext<ChannelEvent> ctx = context(channel);
+        ChannelHandlerContext ctx = context(channel);
         engine.closeOutbound();
         return wrapNonAppData(ctx, channel);
     }
 
-    private PipeContext<ChannelEvent> context(Channel channel) {
+    private ChannelHandlerContext context(Channel channel) {
         return channel.getPipeline().getContext(getClass());
     }
 
     public void handleDownstream(
-            final PipeContext<ChannelEvent> context, final ChannelEvent element) throws Exception {
+            final ChannelHandlerContext context, final ChannelEvent element) throws Exception {
         if (element instanceof ChannelStateEvent) {
             ChannelStateEvent e = (ChannelStateEvent) element;
             switch (e.getState()) {
@@ -201,7 +203,7 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
     }
 
     @Override
-    protected void channelDisconnected(PipeContext<ChannelEvent> ctx,
+    public void channelDisconnected(ChannelHandlerContext ctx,
             ChannelStateEvent e) throws Exception {
         super.channelDisconnected(ctx, e);
         unwrap(ctx, e.getChannel(), ByteArray.EMPTY_BUFFER);
@@ -217,7 +219,7 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
 
     @Override
     protected Object readFrame(
-            PipeContext<ChannelEvent> ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
+            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
         if (buffer.length() < 2) {
             return null;
         }
@@ -245,13 +247,13 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
                 if (future == null) {
                     break;
                 }
-                ChannelDownstream.close(ctx, channel, future);
+                ChannelUtil.close(ctx, channel, future);
             }
         }
         return frame;
     }
 
-    private ChannelFuture wrap(PipeContext<ChannelEvent> context, Channel channel)
+    private ChannelFuture wrap(ChannelHandlerContext context, Channel channel)
             throws SSLException {
 
         ChannelFuture future = null;
@@ -341,7 +343,7 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
         return future;
     }
 
-    private void flushPendingEncryptedWrites(PipeContext<ChannelEvent> ctx) {
+    private void flushPendingEncryptedWrites(ChannelHandlerContext ctx) {
         // Avoid possible dead lock and data integrity issue
         // which is caused by cross communication between more than one channel
         // in the same VM.
@@ -357,7 +359,7 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
         }
     }
 
-    private ChannelFuture wrapNonAppData(PipeContext<ChannelEvent> ctx, Channel channel) throws SSLException {
+    private ChannelFuture wrapNonAppData(ChannelHandlerContext ctx, Channel channel) throws SSLException {
         ChannelFuture future = null;
         ByteBuffer outNetBuf = bufferPool.acquire();
 
@@ -373,7 +375,7 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
                     outNetBuf.clear();
                     if (channel.isConnected()) {
                         future = new DefaultChannelFuture(channel, false);
-                        ChannelDownstream.write(ctx, channel, future, msg);
+                        ChannelUtil.write(ctx, channel, future, msg);
                     }
                 }
 
@@ -406,7 +408,7 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
     }
 
     private ByteArray unwrap(
-            PipeContext<ChannelEvent> ctx, Channel channel, ByteArray packet) throws SSLException {
+            ChannelHandlerContext ctx, Channel channel, ByteArray packet) throws SSLException {
         ByteBuffer inNetBuf = packet.getByteBuffer();
         ByteBuffer outAppBuf = bufferPool.acquire();
 
@@ -481,7 +483,7 @@ public class SslHandler extends FrameDecoder implements DownstreamHandler<Channe
     }
 
     private void closeOutboundAndChannel(
-            final PipeContext<ChannelEvent> context, final ChannelStateEvent e) throws SSLException {
+            final ChannelHandlerContext context, final ChannelStateEvent e) throws SSLException {
         unwrap(context, e.getChannel(), ByteArray.EMPTY_BUFFER);
         if (!engine.isInboundDone()) {
             if (sentCloseNotify.compareAndSet(false, true)) {

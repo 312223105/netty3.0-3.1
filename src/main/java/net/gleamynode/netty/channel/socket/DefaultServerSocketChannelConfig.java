@@ -22,16 +22,15 @@ import java.net.SocketException;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelException;
-import net.gleamynode.netty.pipeline.PipelineFactory;
+import net.gleamynode.netty.channel.ChannelPipelineFactory;
 import net.gleamynode.netty.util.ConvertUtil;
 
 public class DefaultServerSocketChannelConfig implements ServerSocketChannelConfig {
 
     private final ServerSocket socket;
     private volatile int backlog;
-    private volatile PipelineFactory<ChannelEvent> pipelineFactory;
+    private volatile ChannelPipelineFactory pipelineFactory;
 
     public DefaultServerSocketChannelConfig(ServerSocket socket) {
         if (socket == null) {
@@ -95,11 +94,11 @@ public class DefaultServerSocketChannelConfig implements ServerSocketChannelConf
         socket.setPerformancePreferences(connectionTime, latency, bandwidth);
     }
 
-    public PipelineFactory<ChannelEvent> getPipelineFactory() {
+    public ChannelPipelineFactory getPipelineFactory() {
         return pipelineFactory;
     }
 
-    public void setPipelineFactory(PipelineFactory<ChannelEvent> pipelineFactory) {
+    public void setPipelineFactory(ChannelPipelineFactory pipelineFactory) {
         if (pipelineFactory == null) {
             throw new NullPointerException("pipelineFactory");
         }

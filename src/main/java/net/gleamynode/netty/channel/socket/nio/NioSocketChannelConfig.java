@@ -22,6 +22,15 @@ import java.nio.channels.WritableByteChannel;
 
 import net.gleamynode.netty.channel.socket.SocketChannelConfig;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.has net.gleamynode.netty.channel.socket.nio.ReceiveBufferSizePredictor
+ */
 public interface NioSocketChannelConfig extends SocketChannelConfig {
 
     int getWriteSpinCount();

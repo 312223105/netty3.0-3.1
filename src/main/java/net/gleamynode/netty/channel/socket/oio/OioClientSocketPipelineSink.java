@@ -17,23 +17,23 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUpstream.*;
+import static net.gleamynode.netty.channel.ChannelUtil.*;
 
 import java.io.PushbackInputStream;
 import java.net.SocketAddress;
 import java.util.concurrent.Executor;
 
-import net.gleamynode.netty.channel.AbstractChannelPipelineSink;
+import net.gleamynode.netty.channel.AbstractChannelSink;
 import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelFuture;
 import net.gleamynode.netty.channel.ChannelFutureListener;
+import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.ChannelState;
 import net.gleamynode.netty.channel.ChannelStateEvent;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.Pipeline;
 import net.gleamynode.netty.util.NamePreservingRunnable;
 
-class OioClientSocketPipelineSink extends AbstractChannelPipelineSink {
+class OioClientSocketPipelineSink extends AbstractChannelSink {
 
     private final Executor workerExecutor;
 
@@ -42,7 +42,7 @@ class OioClientSocketPipelineSink extends AbstractChannelPipelineSink {
     }
 
     public void elementSunk(
-            Pipeline<ChannelEvent> pipeline, ChannelEvent element) throws Exception {
+            ChannelPipeline pipeline, ChannelEvent element) throws Exception {
         OioClientSocketChannel channel = (OioClientSocketChannel) element.getChannel();
         ChannelFuture future = element.getFuture();
         if (element instanceof ChannelStateEvent) {

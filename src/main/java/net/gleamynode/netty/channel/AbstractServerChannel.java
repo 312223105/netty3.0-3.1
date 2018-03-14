@@ -19,7 +19,6 @@ package net.gleamynode.netty.channel;
 
 import java.net.SocketAddress;
 
-import net.gleamynode.netty.pipeline.Pipeline;
 
 
 /**
@@ -32,7 +31,7 @@ import net.gleamynode.netty.pipeline.Pipeline;
 public abstract class AbstractServerChannel extends AbstractChannel {
 
     protected AbstractServerChannel(
-            ChannelFactory factory, Pipeline<ChannelEvent> pipeline) {
+            ChannelFactory factory, ChannelPipeline pipeline) {
         super(null, factory, pipeline);
     }
 

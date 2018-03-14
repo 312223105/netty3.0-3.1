@@ -15,7 +15,8 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel;
+
 
 /**
  *
@@ -24,8 +25,7 @@ package net.gleamynode.netty.pipeline;
  *
  * @version $Rev$, $Date$
  *
- * @param <E>
  */
-public interface DownstreamHandler<E> extends PipeHandler<E> {
-    void handleDownstream(PipeContext<E> context, E element) throws Exception;
+public interface ChannelDownstreamHandler extends ChannelHandler {
+    void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception;
 }

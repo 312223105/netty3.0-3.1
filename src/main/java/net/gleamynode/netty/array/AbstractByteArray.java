@@ -23,6 +23,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.WritableByteChannel;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.uses net.gleamynode.netty.array.ByteArrayUtil
+ */
 public abstract class AbstractByteArray implements ByteArray {
 
     private int hashCode;

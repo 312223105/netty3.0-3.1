@@ -17,9 +17,28 @@
  */
 package net.gleamynode.netty.channel;
 
-import java.net.SocketAddress;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface MessageEvent extends ChannelEvent {
-    Object getMessage();
-    SocketAddress getRemoteAddress();
+/**
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.hidden
+ */
+@Inherited
+@Documented
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ChannelPipelineCoverage {
+    public static final String ALL = "all";
+    public static final String ONE = "one";
+
+    String value();
 }

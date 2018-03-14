@@ -15,17 +15,27 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.pipeline;
+package net.gleamynode.netty.channel;
 
-public class DefaultPipelineFactory<E> implements PipelineFactory<E> {
-    private final Pipe<E>[] pipes;
 
-    public DefaultPipelineFactory(Pipe<E>... pipes) {
-        DefaultPipeline.checkPipeArray(pipes);
-        this.pipes = pipes.clone();
-    }
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.hidden
+ */
+public abstract class AbstractChannelSink implements ChannelSink {
 
-    public Pipeline<E> getPipeline() throws Exception {
-        return new DefaultPipeline<E>(pipes);
+    public void exceptionCaught(ChannelPipeline chain,
+            ChannelEvent event, ChannelPipelineException cause) throws Exception {
+        Throwable actualCause = cause.getCause();
+        if (actualCause == null) {
+            actualCause = cause;
+        }
+
+        ChannelUtil.fireExceptionCaught(event.getChannel(), actualCause);
     }
 }

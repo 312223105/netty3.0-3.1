@@ -20,14 +20,13 @@ package net.gleamynode.netty.handler.codec.replay;
 import net.gleamynode.netty.array.ByteArray;
 import net.gleamynode.netty.array.ByteArrayBuffer;
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.channel.ChannelEventHandlerAdapter;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
+import net.gleamynode.netty.channel.ChannelPipelineCoverage;
 import net.gleamynode.netty.channel.ChannelStateEvent;
-import net.gleamynode.netty.channel.ChannelUpstream;
+import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.ExceptionEvent;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.PipeContext;
-import net.gleamynode.netty.pipeline.PipelineCoverage;
+import net.gleamynode.netty.channel.SimpleChannelHandler;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -36,16 +35,16 @@ import net.gleamynode.netty.pipeline.PipelineCoverage;
  * @version $Rev$, $Date$
  *
  */
-@PipelineCoverage("one")
-public abstract class ReplayingDecoder extends ChannelEventHandlerAdapter {
+@ChannelPipelineCoverage("one")
+public abstract class ReplayingDecoder extends SimpleChannelHandler {
 
     static final Error REWIND = new Rewind();
 
     private volatile ReplayableByteArrayBuffer cumulation = new ReplayableByteArrayBuffer();
 
     @Override
-    protected void messageReceived(
-            PipeContext<ChannelEvent> ctx, MessageEvent e) throws Exception {
+    public void messageReceived(
+            ChannelHandlerContext ctx, MessageEvent e) throws Exception {
 
         Object m = e.getMessage();
         if (!(m instanceof ByteArray)) {
@@ -74,18 +73,18 @@ public abstract class ReplayingDecoder extends ChannelEventHandlerAdapter {
     }
 
     @Override
-    protected void channelDisconnected(
-            PipeContext<ChannelEvent> ctx, ChannelStateEvent e) throws Exception {
+    public void channelDisconnected(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         cleanup(ctx, e);
     }
 
     @Override
-    protected void exceptionCaught(
-            PipeContext<ChannelEvent> ctx, ExceptionEvent e) throws Exception {
+    public void exceptionCaught(
+            ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
         ctx.sendUpstream(e);
     }
 
-    private void callDecode(PipeContext<ChannelEvent> context,
+    private void callDecode(ChannelHandlerContext context,
             Channel channel, ReplayableByteArrayBuffer cumulation) throws Exception {
         while (!cumulation.empty()) {
             int oldFirstIndex = cumulation.unwrap().firstIndex();
@@ -119,11 +118,11 @@ public abstract class ReplayingDecoder extends ChannelEventHandlerAdapter {
                         "decode() method must consume at least one byte " +
                         "if it returned a decoded message.");
             }
-            ChannelUpstream.fireMessageReceived(context, channel, result);
+            ChannelUtil.fireMessageReceived(context, channel, result);
         }
     }
 
-    private void cleanup(PipeContext<ChannelEvent> ctx, ChannelStateEvent e)
+    private void cleanup(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception {
         // Make sure all frames were read before notifying a closed channel.
         callDecode(ctx, e.getChannel(), cumulation);
@@ -139,5 +138,5 @@ public abstract class ReplayingDecoder extends ChannelEventHandlerAdapter {
     }
 
     protected abstract Object decode(
-            PipeContext<ChannelEvent> ctx, Channel channel, ByteArrayBuffer buffer) throws Exception;
+            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception;
 }

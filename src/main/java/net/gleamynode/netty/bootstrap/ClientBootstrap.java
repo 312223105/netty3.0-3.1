@@ -22,17 +22,16 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.channel.ChannelEventHandlerAdapter;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
+import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelPipelineCoverage;
+import net.gleamynode.netty.channel.ChannelPipelineException;
 import net.gleamynode.netty.channel.ChannelStateEvent;
 import net.gleamynode.netty.channel.ExceptionEvent;
 import net.gleamynode.netty.channel.FailedChannelFuture;
-import net.gleamynode.netty.pipeline.PipeContext;
-import net.gleamynode.netty.pipeline.Pipeline;
-import net.gleamynode.netty.pipeline.PipelineCoverage;
-import net.gleamynode.netty.pipeline.PipelineException;
+import net.gleamynode.netty.channel.SimpleChannelHandler;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -72,11 +71,11 @@ public class ClientBootstrap extends Bootstrap {
         final BlockingQueue<ChannelFuture> futureQueue =
             new LinkedBlockingQueue<ChannelFuture>();
 
-        Pipeline<ChannelEvent> pipeline;
+        ChannelPipeline pipeline;
         try {
             pipeline = getPipelineFactory().getPipeline();
         } catch (Exception e) {
-            throw new PipelineException("Failed to initialize a pipeline.", e);
+            throw new ChannelPipelineException("Failed to initialize a pipeline.", e);
         }
 
         pipeline.addFirst("connector", new Connector(remoteAddress, localAddress, futureQueue));
@@ -98,8 +97,8 @@ public class ClientBootstrap extends Bootstrap {
         return future;
     }
 
-    @PipelineCoverage("one")
-    private final class Connector extends ChannelEventHandlerAdapter {
+    @ChannelPipelineCoverage("one")
+    private final class Connector extends SimpleChannelHandler {
         private final SocketAddress localAddress;
         private final BlockingQueue<ChannelFuture> futureQueue;
         private final SocketAddress remoteAddress;
@@ -114,8 +113,8 @@ public class ClientBootstrap extends Bootstrap {
         }
 
         @Override
-        protected void channelOpen(
-                PipeContext<ChannelEvent> context,
+        public void channelOpen(
+                ChannelHandlerContext context,
                 ChannelStateEvent event) {
             context.sendUpstream(event);
 
@@ -132,8 +131,8 @@ public class ClientBootstrap extends Bootstrap {
         }
 
         @Override
-        protected void channelBound(
-                PipeContext<ChannelEvent> context,
+        public void channelBound(
+                ChannelHandlerContext context,
                 ChannelStateEvent event) {
             context.sendUpstream(event);
 
@@ -145,8 +144,8 @@ public class ClientBootstrap extends Bootstrap {
         }
 
         @Override
-        protected void exceptionCaught(
-                PipeContext<ChannelEvent> ctx, ExceptionEvent e)
+        public void exceptionCaught(
+                ChannelHandlerContext ctx, ExceptionEvent e)
                 throws Exception {
             ctx.sendUpstream(e);
             if (!finished) {

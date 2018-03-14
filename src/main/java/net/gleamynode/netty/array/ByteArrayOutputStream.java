@@ -22,6 +22,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @see ByteArrayInputStream
+ * @see ByteArrayBufferInputStream
+ * @apiviz.uses net.gleamynode.netty.array.CompositeByteArray
+ */
 public class ByteArrayOutputStream extends OutputStream implements DataOutput {
 
     private final CompositeByteArray array;

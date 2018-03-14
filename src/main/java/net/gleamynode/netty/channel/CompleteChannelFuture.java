@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseimport java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-s of the GNU Lesser General Public
+ * Copyright (C) 2008  Trustin Heuiseung Lee
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *

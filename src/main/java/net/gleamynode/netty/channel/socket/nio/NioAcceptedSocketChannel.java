@@ -21,17 +21,16 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFactory;
-import net.gleamynode.netty.pipeline.Pipeline;
+import net.gleamynode.netty.channel.ChannelPipeline;
 
 class NioAcceptedSocketChannel extends NioSocketChannel {
 
     final NioWorker worker;
 
     NioAcceptedSocketChannel(
-            ChannelFactory factory, Pipeline<ChannelEvent> pipeline,
+            ChannelFactory factory, ChannelPipeline pipeline,
             Channel parent, SocketChannel socket,
             NioWorker worker) {
 

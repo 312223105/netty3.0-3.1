@@ -21,11 +21,11 @@ import java.nio.charset.Charset;
 
 import net.gleamynode.netty.array.ByteArray;
 import net.gleamynode.netty.channel.ChannelEvent;
-import net.gleamynode.netty.channel.ChannelUpstream;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
+import net.gleamynode.netty.channel.ChannelPipelineCoverage;
+import net.gleamynode.netty.channel.ChannelUpstreamHandler;
+import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.pipeline.PipeContext;
-import net.gleamynode.netty.pipeline.PipelineCoverage;
-import net.gleamynode.netty.pipeline.UpstreamHandler;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -34,8 +34,8 @@ import net.gleamynode.netty.pipeline.UpstreamHandler;
  * @version $Rev$, $Date$
  *
  */
-@PipelineCoverage("all")
-public class StringDecoder implements UpstreamHandler<ChannelEvent> {
+@ChannelPipelineCoverage("all")
+public class StringDecoder implements ChannelUpstreamHandler {
 
     private final String charsetName;
 
@@ -55,7 +55,7 @@ public class StringDecoder implements UpstreamHandler<ChannelEvent> {
     }
 
     public void handleUpstream(
-            PipeContext<ChannelEvent> context, ChannelEvent element) throws Exception {
+            ChannelHandlerContext context, ChannelEvent element) throws Exception {
         if (!(element instanceof MessageEvent)) {
             context.sendUpstream(element);
             return;
@@ -70,6 +70,6 @@ public class StringDecoder implements UpstreamHandler<ChannelEvent> {
         ByteArray src = (ByteArray) e.getMessage();
         byte[] dst = new byte[src.length()];
         src.get(src.firstIndex(), dst);
-        ChannelUpstream.fireMessageReceived(context, e.getChannel(), new String(dst, charsetName));
+        ChannelUtil.fireMessageReceived(context, e.getChannel(), new String(dst, charsetName));
     }
 }

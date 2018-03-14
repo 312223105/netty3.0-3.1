@@ -18,7 +18,15 @@
 package net.gleamynode.netty.channel;
 
 
-
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.has net.gleamynode.netty.channel.ChannelState
+ */
 public interface ChannelStateEvent extends ChannelEvent {
     ChannelState getState();
     Object getValue();

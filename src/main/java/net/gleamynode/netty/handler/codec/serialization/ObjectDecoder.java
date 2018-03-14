@@ -23,9 +23,8 @@ import net.gleamynode.netty.array.ByteArray;
 import net.gleamynode.netty.array.ByteArrayBuffer;
 import net.gleamynode.netty.array.ByteArrayInputStream;
 import net.gleamynode.netty.channel.Channel;
-import net.gleamynode.netty.channel.ChannelEvent;
+import net.gleamynode.netty.channel.ChannelHandlerContext;
 import net.gleamynode.netty.handler.codec.replay.ReplayingDecoder;
-import net.gleamynode.netty.pipeline.PipeContext;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -48,7 +47,7 @@ public class ObjectDecoder extends ReplayingDecoder {
 
     @Override
     protected Object decode(
-            PipeContext<ChannelEvent> ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
+            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
         int dataLen = buffer.readBE32();
         if (dataLen <= 0) {
             throw new StreamCorruptedException("invalid data length: " + dataLen);

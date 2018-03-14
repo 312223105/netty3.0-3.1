@@ -22,7 +22,6 @@ package net.gleamynode.netty.array;
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
- *
  */
 public class ByteArrayUtil {
 

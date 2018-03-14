@@ -17,24 +17,25 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUpstream.*;
+import static net.gleamynode.netty.channel.ChannelUtil.*;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.gleamynode.netty.channel.AbstractServerChannel;
-import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
+import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.socket.DefaultServerSocketChannelConfig;
+import net.gleamynode.netty.channel.socket.ServerSocketChannel;
 import net.gleamynode.netty.channel.socket.ServerSocketChannelConfig;
-import net.gleamynode.netty.pipeline.Pipeline;
 
-class OioServerSocketChannel extends AbstractServerChannel {
+class OioServerSocketChannel extends AbstractServerChannel
+                             implements ServerSocketChannel {
 
     private static final Logger logger = Logger.getLogger(OioServerSocketChannel.class.getName());
 
@@ -43,7 +44,7 @@ class OioServerSocketChannel extends AbstractServerChannel {
 
     OioServerSocketChannel(
             ChannelFactory factory,
-            Pipeline<ChannelEvent> pipeline) {
+            ChannelPipeline pipeline) {
 
         super(factory, pipeline);
 
@@ -77,11 +78,11 @@ class OioServerSocketChannel extends AbstractServerChannel {
         return config;
     }
 
-    public SocketAddress getLocalAddress() {
-        return socket.getLocalSocketAddress();
+    public InetSocketAddress getLocalAddress() {
+        return (InetSocketAddress) socket.getLocalSocketAddress();
     }
 
-    public SocketAddress getRemoteAddress() {
+    public InetSocketAddress getRemoteAddress() {
         return null;
     }
 
