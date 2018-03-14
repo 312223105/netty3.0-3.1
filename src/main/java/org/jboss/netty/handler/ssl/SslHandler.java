@@ -142,7 +142,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
             if (handshaking) {
                 return this.handshakeFuture;
             } else {
-                handshakeFuture = this.handshakeFuture = future(channel);
+                handshakeFuture = this.handshakeFuture = newHandshakeFuture(channel);
                 handshaking = true;
             }
         }
@@ -210,7 +210,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
     public void channelDisconnected(ChannelHandlerContext ctx,
             ChannelStateEvent e) throws Exception {
         super.channelDisconnected(ctx, e);
-        unwrap(ctx, e.getChannel(), ChannelBuffer.EMPTY_BUFFER, 0, 0);
+        unwrap(ctx, e.getChannel(), ChannelBuffers.EMPTY_BUFFER, 0, 0);
         engine.closeOutbound();
         if (!sentCloseNotify.get() && handshaken) {
             try {
@@ -328,7 +328,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
                             runDelegatedTasks();
                             break;
                         case FINISHED:
-                            setHandshakeSuccess();
+                            setHandshakeSuccess(channel);
                         default:
                             if (result.getStatus() == Status.CLOSED) {
                                 success = false;
@@ -341,7 +341,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
         } catch (SSLException e) {
             success = false;
             if (handshaking) {
-                setHandshakeFailure(e);
+                setHandshakeFailure(channel, e);
             }
             throw e;
         } finally {
@@ -413,7 +413,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
 
                 switch (result.getHandshakeStatus()) {
                 case FINISHED:
-                    setHandshakeSuccess();
+                    setHandshakeSuccess(channel);
                     break;
                 case NEED_TASK:
                     runDelegatedTasks();
@@ -426,7 +426,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
             }
         } catch (SSLException e) {
             if (handshaking) {
-                setHandshakeFailure(e);
+                setHandshakeFailure(channel, e);
             }
             throw e;
         } finally {
@@ -463,7 +463,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
                     runDelegatedTasks();
                     break;
                 case FINISHED:
-                    setHandshakeSuccess();
+                    setHandshakeSuccess(channel);
                 case NOT_HANDSHAKING:
                     wrap(ctx, channel);
                     break loop;
@@ -483,7 +483,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
             }
         } catch (SSLException e) {
             if (handshaking) {
-                setHandshakeFailure(e);
+                setHandshakeFailure(channel, e);
             }
             throw e;
         } finally {
@@ -498,25 +498,33 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
         }
     }
 
-    private void setHandshakeSuccess() {
+    private void setHandshakeSuccess(Channel channel) {
         synchronized (handshakeLock) {
             handshaking = false;
             handshaken = true;
+
+            if (handshakeFuture == null) {
+                handshakeFuture = newHandshakeFuture(channel);
+            }
         }
         handshakeFuture.setSuccess();
     }
 
-    private void setHandshakeFailure(SSLException cause) {
+    private void setHandshakeFailure(Channel channel, SSLException cause) {
         synchronized (handshakeLock) {
             handshaking = false;
             handshaken = false;
+
+            if (handshakeFuture == null) {
+                handshakeFuture = newHandshakeFuture(channel);
+            }
         }
         handshakeFuture.setFailure(cause);
     }
 
     private void closeOutboundAndChannel(
             final ChannelHandlerContext context, final ChannelStateEvent e) throws SSLException {
-        unwrap(context, e.getChannel(), ChannelBuffer.EMPTY_BUFFER, 0, 0);
+        unwrap(context, e.getChannel(), ChannelBuffers.EMPTY_BUFFER, 0, 0);
         if (!engine.isInboundDone()) {
             if (sentCloseNotify.compareAndSet(false, true)) {
                 engine.closeOutbound();
@@ -531,6 +539,19 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
         }
 
         context.sendDownstream(e);
+    }
+
+    private static ChannelFuture newHandshakeFuture(Channel channel) {
+        ChannelFuture future = future(channel);
+        future.addListener(new ChannelFutureListener() {
+            public void operationComplete(ChannelFuture future)
+                    throws Exception {
+                if (!future.isSuccess()) {
+                    fireExceptionCaught(future.getChannel(), future.getCause());
+                }
+            }
+        });
+        return future;
     }
 
     private static class PendingWrite {

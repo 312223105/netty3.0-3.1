@@ -232,11 +232,6 @@ import java.util.NoSuchElementException;
 public interface ChannelBuffer extends Comparable<ChannelBuffer> {
 
     /**
-     * A buffer whose capacity is {@code 0}.
-     */
-    static ChannelBuffer EMPTY_BUFFER = new BigEndianHeapChannelBuffer(0);
-
-    /**
      * Returns the number of bytes (octets) this buffer can contain.
      */
     int capacity();
@@ -769,13 +764,16 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer> {
      *
      * @param length the number of bytes to transfer
      *
+     * @return the actual number of bytes read in from the specified channel.
+     *         {@code -1} if the specified channel is closed.
+     *
      * @throws IndexOutOfBoundsException
      *         if the specified {@code index} is less than {@code 0} or
      *         if {@code index + length} is greater than {@code this.capacity}
      * @throws IOException
      *         if the specified stream threw an exception during I/O
      */
-    void setBytes(int index, InputStream in, int length) throws IOException;
+    int setBytes(int index, InputStream in, int length) throws IOException;
 
     /**
      * Transfers the content of the specified source channel to this buffer
@@ -783,7 +781,8 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer> {
      *
      * @param length the maximum number of bytes to transfer
      *
-     * @return the actual number of bytes read in from the specified channel
+     * @return the actual number of bytes read in from the specified channel.
+     *         {@code -1} if the specified channel is closed.
      *
      * @throws IndexOutOfBoundsException
      *         if the specified {@code index} is less than {@code 0} or

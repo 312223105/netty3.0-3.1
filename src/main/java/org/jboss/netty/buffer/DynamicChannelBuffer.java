@@ -44,15 +44,15 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer {
 
     private final int initialCapacity;
     private final ByteOrder endianness;
-    private ChannelBuffer buffer = ChannelBuffer.EMPTY_BUFFER;
+    private ChannelBuffer buffer = ChannelBuffers.EMPTY_BUFFER;
 
     public DynamicChannelBuffer(int estimatedLength) {
         this(ByteOrder.BIG_ENDIAN, estimatedLength);
     }
 
     public DynamicChannelBuffer(ByteOrder endianness, int estimatedLength) {
-        if (estimatedLength <= 0) {
-            throw new IllegalArgumentException("estimatedLength");
+        if (estimatedLength < 0) {
+            throw new IllegalArgumentException("estimatedLength: " + estimatedLength);
         }
         if (endianness == null) {
             throw new NullPointerException("endianness");
@@ -144,9 +144,9 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer {
         buffer.setBytes(index, src);
     }
 
-    public void setBytes(int index, InputStream in, int length)
+    public int setBytes(int index, InputStream in, int length)
             throws IOException {
-        buffer.setBytes(index, in, length);
+        return buffer.setBytes(index, in, length);
     }
 
     public int setBytes(int index, ScatteringByteChannel in, int length)
@@ -216,7 +216,7 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer {
         DynamicChannelBuffer copiedBuffer = new DynamicChannelBuffer(endianness, Math.max(length, 64));
         copiedBuffer.buffer = buffer.copy();
         if (copiedBuffer.buffer.capacity() == 0) {
-            copiedBuffer.buffer = ChannelBuffer.EMPTY_BUFFER;
+            copiedBuffer.buffer = ChannelBuffers.EMPTY_BUFFER;
         }
         return copiedBuffer;
     }
@@ -245,6 +245,9 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer {
         int newCapacity;
         if (capacity() == 0) {
             newCapacity = initialCapacity;
+            if (newCapacity == 0) {
+                newCapacity = 1;
+            }
         } else {
             newCapacity = capacity();
         }

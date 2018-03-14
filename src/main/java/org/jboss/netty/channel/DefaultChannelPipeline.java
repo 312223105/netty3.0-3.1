@@ -171,9 +171,17 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         }
 
         DefaultChannelHandlerContext oldHead = head;
-        oldHead.next.prev = null;
-        head = oldHead.next;
-        name2ctx.remove(oldHead.getName());
+        if (oldHead == null) {
+            throw new NoSuchElementException();
+        }
+        if (oldHead.next == null) {
+            head = tail = null;
+            name2ctx.clear();
+        } else {
+            oldHead.next.prev = null;
+            head = oldHead.next;
+            name2ctx.remove(oldHead.getName());
+        }
         return oldHead.getHandler();
     }
 
@@ -183,9 +191,17 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         }
 
         DefaultChannelHandlerContext oldTail = tail;
-        oldTail.prev.next = null;
-        tail = oldTail.prev;
-        name2ctx.remove(oldTail.getName());
+        if (oldTail == null) {
+            throw new NoSuchElementException();
+        }
+        if (oldTail.prev == null) {
+            head = tail = null;
+            name2ctx.clear();
+        } else {
+            oldTail.prev.next = null;
+            tail = oldTail.prev;
+            name2ctx.remove(oldTail.getName());
+        }
         return oldTail.getHandler();
     }
 
@@ -229,10 +245,18 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     public synchronized ChannelHandler getFirst() {
+        DefaultChannelHandlerContext head = this.head;
+        if (head == null) {
+            return null;
+        }
         return head.getHandler();
     }
 
     public synchronized ChannelHandler getLast() {
+        DefaultChannelHandlerContext tail = this.tail;
+        if (tail == null) {
+            return null;
+        }
         return tail.getHandler();
     }
 
@@ -334,7 +358,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         try {
             ((ChannelUpstreamHandler) ctx.getHandler()).handleUpstream(ctx, e);
         } catch (Throwable t) {
-            notifyException(e, t);
+            notifyHandlerException(e, t);
         }
     }
 
@@ -345,7 +369,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 getSink().eventSunk(this, e);
                 return;
             } catch (Throwable t) {
-                notifyException(e, t);
+                notifyHandlerException(e, t);
             }
         }
 
@@ -356,7 +380,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         try {
             ((ChannelDownstreamHandler) ctx.getHandler()).handleDownstream(ctx, e);
         } catch (Throwable t) {
-            notifyException(e, t);
+            notifyHandlerException(e, t);
         }
     }
 
@@ -392,7 +416,14 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         return realCtx;
     }
 
-    void notifyException(ChannelEvent e, Throwable t) {
+    void notifyHandlerException(ChannelEvent e, Throwable t) {
+        if (e instanceof ExceptionEvent) {
+            logger.warn(
+                    "An exception was thrown by a user handler " +
+                    "while handling an exception event (" + e + ")", t);
+            return;
+        }
+
         ChannelPipelineException pe;
         if (t instanceof ChannelPipelineException) {
             pe = (ChannelPipelineException) t;
@@ -537,7 +568,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 try {
                     getSink().eventSunk(DefaultChannelPipeline.this, e);
                 } catch (Throwable t) {
-                    notifyException(e, t);
+                    notifyHandlerException(e, t);
                 }
             } else {
                 DefaultChannelPipeline.this.sendDownstream(prev, e);
