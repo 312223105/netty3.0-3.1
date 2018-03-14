@@ -19,6 +19,15 @@ package net.gleamynode.netty.channel;
 
 import java.util.EventListener;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
+ */
 public interface ChannelFutureListener extends EventListener {
     /**
      * An {@link ChannelFutureListener} that closes the {@link Channel} which is

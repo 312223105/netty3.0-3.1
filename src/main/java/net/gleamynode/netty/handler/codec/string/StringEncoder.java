@@ -17,14 +17,15 @@
  */
 package net.gleamynode.netty.handler.codec.string;
 
+import static net.gleamynode.netty.channel.Channels.*;
+
 import java.nio.charset.Charset;
 
-import net.gleamynode.netty.array.HeapByteArray;
+import net.gleamynode.netty.buffer.ChannelBuffers;
 import net.gleamynode.netty.channel.ChannelDownstreamHandler;
 import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelHandlerContext;
 import net.gleamynode.netty.channel.ChannelPipelineCoverage;
-import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.MessageEvent;
 
 /**
@@ -55,20 +56,19 @@ public class StringEncoder implements ChannelDownstreamHandler {
     }
 
     public void handleDownstream(
-            ChannelHandlerContext context, ChannelEvent element) throws Exception {
-        if (!(element instanceof MessageEvent)) {
-            context.sendDownstream(element);
+            ChannelHandlerContext context, ChannelEvent evt) throws Exception {
+        if (!(evt instanceof MessageEvent)) {
+            context.sendDownstream(evt);
             return;
         }
 
-        MessageEvent e = (MessageEvent) element;
+        MessageEvent e = (MessageEvent) evt;
         if (!(e.getMessage() instanceof String)) {
-            context.sendDownstream(element);
+            context.sendDownstream(evt);
             return;
         }
 
         String src = (String) e.getMessage();
-        ChannelUtil.write(
-                context, e.getChannel(), e.getFuture(), new HeapByteArray(src.getBytes(charsetName)));
+        write(context, e.getChannel(), e.getFuture(), ChannelBuffers.wrappedBuffer(src.getBytes(charsetName)));
     }
 }

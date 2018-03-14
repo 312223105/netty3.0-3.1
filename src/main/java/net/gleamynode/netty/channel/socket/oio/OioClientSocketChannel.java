@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
@@ -25,6 +25,7 @@ import java.net.Socket;
 
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelSink;
 
 class OioClientSocketChannel extends OioSocketChannel {
 
@@ -33,9 +34,10 @@ class OioClientSocketChannel extends OioSocketChannel {
 
     OioClientSocketChannel(
             ChannelFactory factory,
-            ChannelPipeline pipeline) {
+            ChannelPipeline pipeline,
+            ChannelSink sink) {
 
-        super(null, factory, pipeline, new Socket());
+        super(null, factory, pipeline, sink, new Socket());
 
         fireChannelOpen(this);
     }

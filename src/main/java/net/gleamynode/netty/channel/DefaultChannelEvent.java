@@ -33,11 +33,11 @@ public class DefaultChannelEvent implements ChannelEvent {
         this.future = future;
     }
 
-    public Channel getChannel() {
+    public final Channel getChannel() {
         return channel;
     }
 
-    public ChannelFuture getFuture() {
+    public final ChannelFuture getFuture() {
         return future;
     }
 

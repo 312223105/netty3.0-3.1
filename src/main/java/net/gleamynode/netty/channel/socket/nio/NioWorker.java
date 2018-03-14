@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -32,9 +32,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.gleamynode.netty.array.ByteArray;
-import net.gleamynode.netty.array.HeapByteArray;
-import net.gleamynode.netty.array.StaticPartialByteArray;
+import net.gleamynode.netty.buffer.ChannelBuffer;
+import net.gleamynode.netty.buffer.ChannelBuffers;
 import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFuture;
@@ -77,8 +76,6 @@ class NioWorker implements Runnable {
                 } while (selector == null);
             }
         }
-
-        channel.setWorker(this);
 
         if (firstChannel) {
             try {
@@ -220,13 +217,13 @@ class NioWorker implements Runnable {
             predictor.previousReceiveBufferSize(readBytes);
 
             // Fire the event.
-            ByteArray array;
+            ChannelBuffer buffer;
             if (readBytes == buf.capacity()) {
-                array = new HeapByteArray(buf.array());
+                buffer = ChannelBuffers.wrappedBuffer(buf.array());
             } else {
-                array = new StaticPartialByteArray(buf.array(), 0, readBytes);
+                buffer = ChannelBuffers.wrappedBuffer(buf.array(), 0, readBytes);
             }
-            fireMessageReceived(channel, array);
+            fireMessageReceived(channel, buffer);
         }
 
         if (ret < 0 || failure) {
@@ -272,20 +269,22 @@ class NioWorker implements Runnable {
                     break;
                 }
 
+                ChannelBuffer a;
                 if (channel.currentWriteEvent == null) {
                     channel.currentWriteEvent = channel.writeBuffer.poll();
-                    channel.currentWriteIndex =
-                        ((ByteArray) channel.currentWriteEvent.getMessage()).firstIndex();
+                    a = (ChannelBuffer) channel.currentWriteEvent.getMessage();
+                    channel.currentWriteIndex = a.readerIndex();
+                } else {
+                    a = (ChannelBuffer) channel.currentWriteEvent.getMessage();
                 }
 
-                ByteArray a = (ByteArray) channel.currentWriteEvent.getMessage();
                 int localWrittenBytes = 0;
                 try {
                     for (int i = channel.getConfig().getWriteSpinCount(); i > 0; i --) {
-                        localWrittenBytes = a.copyTo(
-                            channel.socket,
+                        localWrittenBytes = a.getBytes(
                             channel.currentWriteIndex,
-                            Math.min(maxWrittenBytes - writtenBytes, a.length() - (channel.currentWriteIndex - a.firstIndex())));
+                            channel.socket,
+                            Math.min(maxWrittenBytes - writtenBytes, a.writerIndex() - channel.currentWriteIndex));
                         if (localWrittenBytes != 0) {
                             break;
                         }
@@ -297,7 +296,7 @@ class NioWorker implements Runnable {
 
                 writtenBytes += localWrittenBytes;
                 channel.currentWriteIndex += localWrittenBytes;
-                if (channel.currentWriteIndex == a.endIndex()) {
+                if (channel.currentWriteIndex == a.writerIndex()) {
                     channel.currentWriteEvent.getFuture().setSuccess();
                     channel.currentWriteEvent = null;
                 } else if (localWrittenBytes == 0 || writtenBytes < maxWrittenBytes) {
@@ -315,7 +314,15 @@ class NioWorker implements Runnable {
     }
 
     private static void setOpWrite(NioSocketChannel channel, boolean opWrite) {
-        Selector selector = channel.getWorker().selector;
+        NioWorker worker = channel.getWorker();
+        if (worker == null) {
+            IllegalStateException cause =
+                new IllegalStateException("Channel not connected yet (null worker)");
+            fireExceptionCaught(channel, cause);
+            return;
+        }
+
+        Selector selector = worker.selector;
         SelectionKey key = channel.socket.keyFor(selector);
         if (!key.isValid()) {
             close(key);
@@ -324,7 +331,7 @@ class NioWorker implements Runnable {
         int interestOps;
         boolean changed = false;
         if (opWrite) {
-            if (Thread.currentThread() == channel.getWorker().thread) {
+            if (Thread.currentThread() == worker.thread) {
                 interestOps = key.interestOps();
                 if ((interestOps & SelectionKey.OP_WRITE) == 0) {
                     interestOps |= SelectionKey.OP_WRITE;
@@ -332,7 +339,7 @@ class NioWorker implements Runnable {
                     changed = true;
                 }
             } else {
-                synchronized (channel.getWorker().selectorGuard) {
+                synchronized (worker.selectorGuard) {
                     selector.wakeup();
                     interestOps = key.interestOps();
                     if ((interestOps & SelectionKey.OP_WRITE) == 0) {
@@ -343,7 +350,7 @@ class NioWorker implements Runnable {
                 }
             }
         } else {
-            if (Thread.currentThread() == channel.getWorker().thread) {
+            if (Thread.currentThread() == worker.thread) {
                 interestOps = key.interestOps();
                 if ((interestOps & SelectionKey.OP_WRITE) != 0) {
                     interestOps &= ~SelectionKey.OP_WRITE;
@@ -351,7 +358,7 @@ class NioWorker implements Runnable {
                     changed = true;
                 }
             } else {
-                synchronized (channel.getWorker().selectorGuard) {
+                synchronized (worker.selectorGuard) {
                     selector.wakeup();
                     interestOps = key.interestOps();
                     if ((interestOps & SelectionKey.OP_WRITE) != 0) {
@@ -411,7 +418,9 @@ class NioWorker implements Runnable {
                 new IllegalStateException("Channel not connected yet (null worker)");
             future.setFailure(cause);
             fireExceptionCaught(channel, cause);
+            return;
         }
+
         Selector selector = worker.selector;
         SelectionKey key = channel.socket.keyFor(selector);
         if (key == null || selector == null) {
@@ -423,13 +432,13 @@ class NioWorker implements Runnable {
 
         boolean changed = false;
         try {
-            if (Thread.currentThread() == channel.getWorker().thread) {
+            if (Thread.currentThread() == worker.thread) {
                 if (key.interestOps() != interestOps) {
                     key.interestOps(interestOps);
                     changed = true;
                 }
             } else {
-                synchronized (channel.getWorker().selectorGuard) {
+                synchronized (worker.selectorGuard) {
                     selector.wakeup();
                     if (key.interestOps() != interestOps) {
                         key.interestOps(interestOps);

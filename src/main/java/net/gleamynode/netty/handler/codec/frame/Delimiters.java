@@ -17,8 +17,8 @@
  */
 package net.gleamynode.netty.handler.codec.frame;
 
-import net.gleamynode.netty.array.ByteArray;
-import net.gleamynode.netty.array.HeapByteArray;
+import net.gleamynode.netty.buffer.ChannelBuffer;
+import net.gleamynode.netty.buffer.ChannelBuffers;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -29,16 +29,16 @@ import net.gleamynode.netty.array.HeapByteArray;
  */
 public class Delimiters {
 
-    public static ByteArray[] newNulDelimiter() {
-        return new ByteArray[] {
-                new HeapByteArray(new byte[] { 0 }) };
+    public static ChannelBuffer[] nulDelimiter() {
+        return new ChannelBuffer[] {
+                ChannelBuffers.wrappedBuffer(new byte[] { 0 }) };
     }
 
-    public static ByteArray[] newLineDelimiter() {
-        return new ByteArray[] {
-                new HeapByteArray(new byte[] { '\r', '\n' }),
-                new HeapByteArray(new byte[] { '\n' }),
-                new HeapByteArray(new byte[] { '\r' }) };
+    public static ChannelBuffer[] lineDelimiter() {
+        return new ChannelBuffer[] {
+                ChannelBuffers.wrappedBuffer(new byte[] { '\r', '\n' }),
+                ChannelBuffers.wrappedBuffer(new byte[] { '\n' }),
+                ChannelBuffers.wrappedBuffer(new byte[] { '\r' }) };
     }
 
     private Delimiters() {

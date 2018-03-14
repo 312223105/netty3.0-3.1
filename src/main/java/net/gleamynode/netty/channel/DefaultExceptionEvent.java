@@ -23,9 +23,7 @@ public class DefaultExceptionEvent extends DefaultChannelEvent implements
 
     private final Throwable cause;
 
-    public DefaultExceptionEvent(
-            Channel channel, ChannelFuture future, Throwable cause) {
-
+    public DefaultExceptionEvent(Channel channel, ChannelFuture future, Throwable cause) {
         super(channel, future);
         if (cause == null) {
             throw new NullPointerException("cause");

@@ -17,14 +17,15 @@
  */
 package net.gleamynode.netty.handler.codec.string;
 
+import static net.gleamynode.netty.channel.Channels.*;
+
 import java.nio.charset.Charset;
 
-import net.gleamynode.netty.array.ByteArray;
+import net.gleamynode.netty.buffer.ChannelBuffer;
 import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelHandlerContext;
 import net.gleamynode.netty.channel.ChannelPipelineCoverage;
 import net.gleamynode.netty.channel.ChannelUpstreamHandler;
-import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.MessageEvent;
 
 /**
@@ -55,21 +56,21 @@ public class StringDecoder implements ChannelUpstreamHandler {
     }
 
     public void handleUpstream(
-            ChannelHandlerContext context, ChannelEvent element) throws Exception {
-        if (!(element instanceof MessageEvent)) {
-            context.sendUpstream(element);
+            ChannelHandlerContext context, ChannelEvent evt) throws Exception {
+        if (!(evt instanceof MessageEvent)) {
+            context.sendUpstream(evt);
             return;
         }
 
-        MessageEvent e = (MessageEvent) element;
-        if (!(e.getMessage() instanceof ByteArray)) {
-            context.sendUpstream(element);
+        MessageEvent e = (MessageEvent) evt;
+        if (!(e.getMessage() instanceof ChannelBuffer)) {
+            context.sendUpstream(evt);
             return;
         }
 
-        ByteArray src = (ByteArray) e.getMessage();
-        byte[] dst = new byte[src.length()];
-        src.get(src.firstIndex(), dst);
-        ChannelUtil.fireMessageReceived(context, e.getChannel(), new String(dst, charsetName));
+        ChannelBuffer src = (ChannelBuffer) e.getMessage();
+        byte[] dst = new byte[src.readableBytes()];
+        src.getBytes(src.readerIndex(), dst);
+        fireMessageReceived(context, e.getChannel(), new String(dst, charsetName));
     }
 }

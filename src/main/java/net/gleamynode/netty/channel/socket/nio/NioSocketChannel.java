@@ -28,6 +28,7 @@ import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
 import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelSink;
 import net.gleamynode.netty.channel.MessageEvent;
 
 /**
@@ -50,8 +51,9 @@ abstract class NioSocketChannel extends AbstractChannel
 
     public NioSocketChannel(
             Channel parent, ChannelFactory factory,
-            ChannelPipeline pipeline, SocketChannel socket) {
-        super(parent, factory, pipeline);
+            ChannelPipeline pipeline, ChannelSink sink,
+            SocketChannel socket) {
+        super(parent, factory, pipeline, sink);
 
         this.socket = socket;
         config = new DefaultNioSocketChannelConfig(socket.socket());

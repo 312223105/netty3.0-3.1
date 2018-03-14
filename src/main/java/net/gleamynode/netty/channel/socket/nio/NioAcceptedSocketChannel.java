@@ -24,6 +24,7 @@ import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelSink;
 
 class NioAcceptedSocketChannel extends NioSocketChannel {
 
@@ -31,10 +32,10 @@ class NioAcceptedSocketChannel extends NioSocketChannel {
 
     NioAcceptedSocketChannel(
             ChannelFactory factory, ChannelPipeline pipeline,
-            Channel parent, SocketChannel socket,
-            NioWorker worker) {
+            Channel parent, ChannelSink sink,
+            SocketChannel socket, NioWorker worker) {
 
-        super(parent, factory, pipeline, socket);
+        super(parent, factory, pipeline, sink, socket);
 
         this.worker = worker;
         try {

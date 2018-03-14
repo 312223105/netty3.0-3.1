@@ -25,9 +25,9 @@ package net.gleamynode.netty.channel;
  *
  * @version $Rev$, $Date$
  *
- * @apiviz.uses net.gleamynode.netty.channel.ChannelPipeline - - sends upstream events
+ * @apiviz.uses net.gleamynode.netty.channel.ChannelPipeline - - sends events upstream
  */
 public interface ChannelSink {
-    void elementSunk(ChannelPipeline chain, ChannelEvent e) throws Exception;
-    void exceptionCaught(ChannelPipeline chain, ChannelEvent e, ChannelPipelineException cause) throws Exception;
+    void eventSunk(ChannelPipeline pipeline, ChannelEvent e) throws Exception;
+    void exceptionCaught(ChannelPipeline pipeline, ChannelEvent e, ChannelPipelineException cause) throws Exception;
 }

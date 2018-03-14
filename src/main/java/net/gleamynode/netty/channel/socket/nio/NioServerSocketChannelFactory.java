@@ -27,7 +27,7 @@ import net.gleamynode.netty.channel.socket.ServerSocketChannelFactory;
 public class NioServerSocketChannelFactory implements ServerSocketChannelFactory {
 
     final Executor bossExecutor;
-    final ChannelSink sink;
+    private final ChannelSink sink;
 
     public NioServerSocketChannelFactory(
             Executor bossExecutor, Executor workerExecutor) {
@@ -53,8 +53,7 @@ public class NioServerSocketChannelFactory implements ServerSocketChannelFactory
     }
 
     public ServerSocketChannel newChannel(ChannelPipeline pipeline) {
-        pipeline.setSink(sink);
-        return new NioServerSocketChannel(this, pipeline);
+        return new NioServerSocketChannel(this, pipeline, sink);
     }
 
 }

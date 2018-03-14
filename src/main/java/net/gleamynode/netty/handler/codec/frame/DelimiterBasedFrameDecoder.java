@@ -17,8 +17,7 @@
  */
 package net.gleamynode.netty.handler.codec.frame;
 
-import net.gleamynode.netty.array.ByteArray;
-import net.gleamynode.netty.array.ByteArrayBuffer;
+import net.gleamynode.netty.buffer.ChannelBuffer;
 import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelHandlerContext;
 
@@ -32,17 +31,20 @@ import net.gleamynode.netty.channel.ChannelHandlerContext;
  */
 public class DelimiterBasedFrameDecoder extends FrameDecoder {
 
-    private final ByteArray[] delimiters;
+    private final ChannelBuffer[] delimiters;
     private final int maxFrameLength;
 
-    public DelimiterBasedFrameDecoder(int maxFrameLength, ByteArray delimiter) {
+    public DelimiterBasedFrameDecoder(int maxFrameLength, ChannelBuffer delimiter) {
         validateMaxFrameLength(maxFrameLength);
         validateDelimiter(delimiter);
-        delimiters = new ByteArray[] { delimiter };
+        delimiters = new ChannelBuffer[] {
+                delimiter.slice(
+                        delimiter.readerIndex(), delimiter.readableBytes())
+        };
         this.maxFrameLength = maxFrameLength;
     }
 
-    public DelimiterBasedFrameDecoder(int maxFrameLength, ByteArray... delimiters) {
+    public DelimiterBasedFrameDecoder(int maxFrameLength, ChannelBuffer... delimiters) {
         validateMaxFrameLength(maxFrameLength);
         if (delimiters == null) {
             throw new NullPointerException("delimiters");
@@ -50,35 +52,35 @@ public class DelimiterBasedFrameDecoder extends FrameDecoder {
         if (delimiters.length == 0) {
             throw new IllegalArgumentException("empty delimiters");
         }
-        this.delimiters = new ByteArray[delimiters.length];
+        this.delimiters = new ChannelBuffer[delimiters.length];
         for (int i = 0; i < delimiters.length; i ++) {
-            ByteArray d = delimiters[i];
+            ChannelBuffer d = delimiters[i];
             validateDelimiter(d);
-            this.delimiters[i] = d;
+            this.delimiters[i] = d.slice(d.readerIndex(), d.readableBytes());
         }
         this.maxFrameLength = maxFrameLength;
     }
 
     @Override
-    protected Object readFrame(
-            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
+    protected Object decode(
+            ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
         // Try all delimiters.
-        for (ByteArray delim: delimiters) {
+        for (ChannelBuffer delim: delimiters) {
             int delimIndex = indexOf(buffer, delim);
-            if (delimIndex > buffer.firstIndex()) {
-                ByteArray frame = buffer.read(delimIndex - buffer.firstIndex());
-                if (frame.length() > maxFrameLength) {
+            if (delimIndex > 0) {
+                ChannelBuffer frame = buffer.readBytes(delimIndex);
+                if (frame.capacity() > maxFrameLength) {
                     fail();
                 }
-                buffer.skip(delim.length());
+                buffer.skipBytes(delim.capacity());
                 return frame;
-            } else if (delimIndex == buffer.firstIndex()) {
-                buffer.skip(delim.length());
-                return ByteArray.EMPTY_BUFFER;
+            } else if (delimIndex == 0) {
+                buffer.skipBytes(delim.capacity());
+                return ChannelBuffer.EMPTY_BUFFER;
             }
         }
 
-        if (buffer.length() > maxFrameLength) {
+        if (buffer.readableBytes() > maxFrameLength) {
             fail();
         }
         return null;
@@ -89,23 +91,23 @@ public class DelimiterBasedFrameDecoder extends FrameDecoder {
                 "The frame length exceeds " + maxFrameLength);
     }
 
-    private static int indexOf(ByteArray haystack, ByteArray needle) {
-        for (int i = haystack.firstIndex(); i < haystack.endIndex(); i ++) {
+    private static int indexOf(ChannelBuffer haystack, ChannelBuffer needle) {
+        for (int i = haystack.readerIndex(); i < haystack.writerIndex(); i ++) {
             int haystackIndex = i;
-            int needleIndex = needle.firstIndex();
-            for (; needleIndex < needle.endIndex(); needleIndex ++) {
-                if (haystack.get8(haystackIndex) != needle.get8(needleIndex)) {
+            int needleIndex;
+            for (needleIndex = 0; needleIndex < needle.capacity(); needleIndex ++) {
+                if (haystack.getByte(haystackIndex) != needle.getByte(needleIndex)) {
                     break;
                 } else {
                     haystackIndex ++;
-                    if (haystackIndex == haystack.endIndex() &&
-                        needleIndex != needle.endIndex() - 1) {
+                    if (haystackIndex == haystack.writerIndex() &&
+                        needleIndex != needle.capacity() - 1) {
                         return -1;
                     }
                 }
             }
 
-            if (needleIndex == needle.endIndex()) {
+            if (needleIndex == needle.capacity()) {
                 // Found the needle from the haystack!
                 return i;
             }
@@ -113,11 +115,11 @@ public class DelimiterBasedFrameDecoder extends FrameDecoder {
         return -1;
     }
 
-    private static void validateDelimiter(ByteArray delimiter) {
+    private static void validateDelimiter(ChannelBuffer delimiter) {
         if (delimiter == null) {
             throw new NullPointerException("delimiter");
         }
-        if (delimiter.empty()) {
+        if (!delimiter.isReadable()) {
             throw new IllegalArgumentException("empty delimiter");
         }
     }

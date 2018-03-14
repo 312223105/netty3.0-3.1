@@ -28,6 +28,7 @@ import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
 import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelSink;
 import net.gleamynode.netty.channel.socket.DefaultSocketChannelConfig;
 import net.gleamynode.netty.channel.socket.SocketChannel;
 import net.gleamynode.netty.channel.socket.SocketChannelConfig;
@@ -42,9 +43,11 @@ abstract class OioSocketChannel extends AbstractChannel
     OioSocketChannel(
             Channel parent,
             ChannelFactory factory,
-            ChannelPipeline pipeline, Socket socket) {
+            ChannelPipeline pipeline,
+            ChannelSink sink,
+            Socket socket) {
 
-        super(parent, factory, pipeline);
+        super(parent, factory, pipeline, sink);
 
         this.socket = socket;
         config = new DefaultSocketChannelConfig(socket);

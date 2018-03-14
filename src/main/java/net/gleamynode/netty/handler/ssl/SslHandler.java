@@ -17,6 +17,8 @@
  */
 package net.gleamynode.netty.handler.ssl;
 
+import static net.gleamynode.netty.channel.Channels.*;
+
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -28,9 +30,8 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 
-import net.gleamynode.netty.array.ByteArray;
-import net.gleamynode.netty.array.ByteArrayBuffer;
-import net.gleamynode.netty.array.HeapByteArray;
+import net.gleamynode.netty.buffer.ChannelBuffer;
+import net.gleamynode.netty.buffer.ChannelBuffers;
 import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelDownstreamHandler;
 import net.gleamynode.netty.channel.ChannelEvent;
@@ -38,11 +39,8 @@ import net.gleamynode.netty.channel.ChannelFuture;
 import net.gleamynode.netty.channel.ChannelFutureListener;
 import net.gleamynode.netty.channel.ChannelHandlerContext;
 import net.gleamynode.netty.channel.ChannelStateEvent;
-import net.gleamynode.netty.channel.ChannelUtil;
-import net.gleamynode.netty.channel.DefaultChannelFuture;
-import net.gleamynode.netty.channel.DefaultMessageEvent;
+import net.gleamynode.netty.channel.Channels;
 import net.gleamynode.netty.channel.MessageEvent;
-import net.gleamynode.netty.channel.SucceededChannelFuture;
 import net.gleamynode.netty.handler.codec.frame.FrameDecoder;
 import net.gleamynode.netty.util.ImmediateExecutor;
 
@@ -137,8 +135,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
             if (handshaking) {
                 return this.handshakeFuture;
             } else {
-                handshakeFuture = this.handshakeFuture =
-                    new DefaultChannelFuture(channel, false);
+                handshakeFuture = this.handshakeFuture = future(channel);
                 handshaking = true;
             }
         }
@@ -160,9 +157,9 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
     }
 
     public void handleDownstream(
-            final ChannelHandlerContext context, final ChannelEvent element) throws Exception {
-        if (element instanceof ChannelStateEvent) {
-            ChannelStateEvent e = (ChannelStateEvent) element;
+            final ChannelHandlerContext context, final ChannelEvent evt) throws Exception {
+        if (evt instanceof ChannelStateEvent) {
+            ChannelStateEvent e = (ChannelStateEvent) evt;
             switch (e.getState()) {
             case OPEN:
             case CONNECTED:
@@ -173,40 +170,40 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
                 }
             }
         }
-        if (!(element instanceof MessageEvent)) {
-            context.sendDownstream(element);
+        if (!(evt instanceof MessageEvent)) {
+            context.sendDownstream(evt);
             return;
         }
 
-        MessageEvent e = (MessageEvent) element;
-        if (!(e.getMessage() instanceof ByteArray)) {
-            context.sendDownstream(element);
+        MessageEvent e = (MessageEvent) evt;
+        if (!(e.getMessage() instanceof ChannelBuffer)) {
+            context.sendDownstream(evt);
             return;
         }
 
         // Don't encrypt the first write request if this handler is
         // created with startTLS flag turned on.
         if (startTls && sentFirstMessage.compareAndSet(false, true)) {
-            context.sendDownstream(element);
+            context.sendDownstream(evt);
             return;
         }
 
         // Otherwise, all messages are encrypted.
-        ByteArray msg = (ByteArray) e.getMessage();
+        ChannelBuffer msg = (ChannelBuffer) e.getMessage();
         PendingWrite pendingWrite =
-            new PendingWrite(element.getFuture(), msg.getByteBuffer());
+            new PendingWrite(evt.getFuture(), msg.toByteBuffer(msg.readerIndex(), msg.readableBytes()));
         synchronized (pendingUnencryptedWrites) {
             pendingUnencryptedWrites.offer(pendingWrite);
         }
 
-        wrap(context, element.getChannel());
+        wrap(context, evt.getChannel());
     }
 
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx,
             ChannelStateEvent e) throws Exception {
         super.channelDisconnected(ctx, e);
-        unwrap(ctx, e.getChannel(), ByteArray.EMPTY_BUFFER);
+        unwrap(ctx, e.getChannel(), ChannelBuffer.EMPTY_BUFFER, 0, 0);
         engine.closeOutbound();
         if (!sentCloseNotify.get() && handshaken) {
             try {
@@ -218,46 +215,50 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
     }
 
     @Override
-    protected Object readFrame(
-            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
-        if (buffer.length() < 2) {
+    protected Object decode(
+            ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
+        if (buffer.readableBytes() < 2) {
             return null;
         }
 
-        int packetLength = buffer.getBE16(buffer.firstIndex()) & 0xFFFF;
+        int packetLength = buffer.getShort(buffer.readerIndex()) & 0xFFFF;
         if ((packetLength & 0x8000) != 0) {
             // Detected a SSLv2 packet
             packetLength &= 0x7FFF;
             packetLength += 2;
-        } else  if (buffer.length() < 5) {
+        } else  if (buffer.readableBytes() < 5) {
             return null;
         } else {
             // Detected a SSLv3 / TLSv1 packet
-            packetLength = (buffer.getBE16(buffer.firstIndex() + 3) & 0xFFFF) + 5;
+            packetLength = (buffer.getShort(buffer.readerIndex() + 3) & 0xFFFF) + 5;
         }
 
-        if (buffer.length() < packetLength) {
+        if (buffer.readableBytes() < packetLength) {
             return null;
         }
 
-        Object frame = unwrap(ctx, channel, buffer.read(packetLength));
-        if (frame == null && engine.isInboundDone()) {
-            for (;;) {
-                ChannelFuture future = closeFutures.poll();
-                if (future == null) {
-                    break;
+        try {
+            Object frame = unwrap(ctx, channel, buffer, buffer.readerIndex(), packetLength);
+            if (frame == null && engine.isInboundDone()) {
+                for (;;) {
+                    ChannelFuture future = closeFutures.poll();
+                    if (future == null) {
+                        break;
+                    }
+                    Channels.close(ctx, channel, future);
                 }
-                ChannelUtil.close(ctx, channel, future);
             }
+            return frame;
+        } finally {
+            buffer.skipBytes(packetLength);
         }
-        return frame;
     }
 
     private ChannelFuture wrap(ChannelHandlerContext context, Channel channel)
             throws SSLException {
 
         ChannelFuture future = null;
-        ByteArray msg;
+        ChannelBuffer msg;
         ByteBuffer outNetBuf = bufferPool.acquire();
         try {
             loop:
@@ -283,21 +284,19 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
                     }
                     if (result.bytesProduced() > 0) {
                         outNetBuf.flip();
-                        msg = new HeapByteArray(outNetBuf.remaining());
-                        msg.set(msg.firstIndex(), outNetBuf.array(), 0, msg.length());
+                        msg = ChannelBuffers.buffer(outNetBuf.remaining());
+                        msg.writeBytes(outNetBuf.array(), 0, msg.capacity());
                         outNetBuf.clear();
 
                         if (pendingWrite.outAppBuf.hasRemaining()) {
                             // pendingWrite's future shouldn't be notified if
                             // only partial data is written.
-                            future = new SucceededChannelFuture(channel);
+                            future = succeededFuture(channel);
                         } else {
                             future = pendingWrite.future;
                         }
 
-                        MessageEvent encryptedWrite =
-                            new DefaultMessageEvent(channel, future, msg, null);
-
+                        MessageEvent encryptedWrite = messageEvent(channel, future, msg);
                         if (Thread.holdsLock(pendingEncryptedWrites)) {
                             pendingEncryptedWrites.offer(encryptedWrite);
                         } else {
@@ -338,7 +337,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
         flushPendingEncryptedWrites(context);
 
         if (future == null) {
-            future = new SucceededChannelFuture(channel);
+            future = succeededFuture(channel);
         }
         return future;
     }
@@ -370,12 +369,12 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
 
                 if (result.bytesProduced() > 0) {
                     outNetBuf.flip();
-                    ByteArray msg = new HeapByteArray(outNetBuf.remaining());
-                    msg.set(msg.firstIndex(), outNetBuf.array(), 0, msg.length());
+                    ChannelBuffer msg = ChannelBuffers.buffer(outNetBuf.remaining());
+                    msg.writeBytes(outNetBuf.array(), 0, msg.capacity());
                     outNetBuf.clear();
                     if (channel.isConnected()) {
-                        future = new DefaultChannelFuture(channel, false);
-                        ChannelUtil.write(ctx, channel, future, msg);
+                        future = future(channel);
+                        write(ctx, channel, future, msg);
                     }
                 }
 
@@ -402,14 +401,14 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
         }
 
         if (future == null) {
-            future = new SucceededChannelFuture(channel);
+            future = succeededFuture(channel);
         }
         return future;
     }
 
-    private ByteArray unwrap(
-            ChannelHandlerContext ctx, Channel channel, ByteArray packet) throws SSLException {
-        ByteBuffer inNetBuf = packet.getByteBuffer();
+    private ChannelBuffer unwrap(
+            ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, int offset, int length) throws SSLException {
+        ByteBuffer inNetBuf = buffer.toByteBuffer(offset, length);
         ByteBuffer outAppBuf = bufferPool.acquire();
 
         try {
@@ -443,8 +442,8 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
             outAppBuf.flip();
 
             if (outAppBuf.hasRemaining()) {
-                ByteArray frame = new HeapByteArray(outAppBuf.remaining());
-                frame.set(frame.firstIndex(), outAppBuf.array(), 0, frame.length());
+                ChannelBuffer frame = ChannelBuffers.buffer(outAppBuf.remaining());
+                frame.writeBytes(outAppBuf.array(), 0, frame.capacity());
                 return frame;
             } else {
                 return null;
@@ -484,7 +483,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
 
     private void closeOutboundAndChannel(
             final ChannelHandlerContext context, final ChannelStateEvent e) throws SSLException {
-        unwrap(context, e.getChannel(), ByteArray.EMPTY_BUFFER);
+        unwrap(context, e.getChannel(), ChannelBuffer.EMPTY_BUFFER, 0, 0);
         if (!engine.isInboundDone()) {
             if (sentCloseNotify.compareAndSet(false, true)) {
                 engine.closeOutbound();

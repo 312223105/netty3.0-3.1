@@ -27,6 +27,7 @@ import net.gleamynode.netty.channel.Channel;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.composedOf net.gleamynode.netty.channel.socket.ServerSocketChannelConfig
  */
 public interface ServerSocketChannel extends Channel {
     ServerSocketChannelConfig getConfig();

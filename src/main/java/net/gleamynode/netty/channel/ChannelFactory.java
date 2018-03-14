@@ -27,7 +27,6 @@ package net.gleamynode.netty.channel;
  *
  * @apiviz.landmark
  * @apiviz.has        net.gleamynode.netty.channel.Channel oneway - - creates
- * @apiviz.composedOf net.gleamynode.netty.channel.ChannelSink
  */
 public interface ChannelFactory {
     Channel newChannel(ChannelPipeline pipeline);

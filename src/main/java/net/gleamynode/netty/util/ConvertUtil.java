@@ -60,6 +60,20 @@ public class ConvertUtil {
         }
     }
 
+    public static int toPowerOfTwo(int value) {
+        if (value <= 0) {
+            return 0;
+        }
+        int newValue = 1;
+        while (newValue < value) {
+            newValue <<= 1;
+            if (newValue > 0) {
+                return 0x40000000;
+            }
+        }
+        return newValue;
+    }
+
     private ConvertUtil() {
         // Unused
     }

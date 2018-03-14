@@ -42,13 +42,17 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
     private final AtomicBoolean closed = new AtomicBoolean();
     private volatile int interestOps = OP_READ;
 
+    /** Cache for the string representation of this channel */
+    private String strVal;
+
     protected AbstractChannel(
             Channel parent, ChannelFactory factory,
-            ChannelPipeline pipeline) {
+            ChannelPipeline pipeline, ChannelSink sink) {
 
         this.parent = parent;
         this.factory = factory;
         this.pipeline = pipeline;
+        pipeline.attach(this, sink);
     }
 
     public final UUID getId() {
@@ -98,19 +102,19 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
     }
 
     public ChannelFuture bind(SocketAddress localAddress) {
-        return ChannelUtil.bind(this, localAddress);
+        return Channels.bind(this, localAddress);
     }
 
     public ChannelFuture close() {
-        return ChannelUtil.close(this);
+        return Channels.close(this);
     }
 
     public ChannelFuture connect(SocketAddress remoteAddress) {
-        return ChannelUtil.connect(this, remoteAddress);
+        return Channels.connect(this, remoteAddress);
     }
 
     public ChannelFuture disconnect() {
-        return ChannelUtil.disconnect(this);
+        return Channels.disconnect(this);
     }
 
     public int getInterestOps() {
@@ -118,7 +122,7 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
     }
 
     public ChannelFuture setInterestOps(int interestOps) {
-        return ChannelUtil.setInterestOps(this, interestOps);
+        return Channels.setInterestOps(this, interestOps);
     }
 
     protected void setInterestOpsNow(int interestOps) {
@@ -142,15 +146,19 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
     }
 
     public ChannelFuture write(Object message) {
-        return ChannelUtil.write(this, message);
+        return Channels.write(this, message);
     }
 
     public ChannelFuture write(Object message, SocketAddress remoteAddress) {
-        return ChannelUtil.write(this, message, remoteAddress);
+        return Channels.write(this, message, remoteAddress);
     }
 
     @Override
     public String toString() {
+        if (strVal != null) {
+            return strVal;
+        }
+
         StringBuilder buf = new StringBuilder(128);
         buf.append(getClass().getSimpleName());
         buf.append("(id: ");
@@ -174,6 +182,6 @@ public abstract class AbstractChannel implements Channel, Comparable<Channel> {
 
         buf.append(')');
 
-        return buf.toString();
+        return strVal = buf.toString();
     }
 }

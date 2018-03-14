@@ -23,9 +23,6 @@ package net.gleamynode.netty.channel;
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
- *
- * @apiviz.landmark
- * @apiviz.uses net.gleamynode.netty.channel.ChannelUtil - - optional yet useful
  */
 public interface ChannelHandler {
     // Thsi is a tag interface.

@@ -25,6 +25,7 @@ package net.gleamynode.netty.channel;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.landmark
  */
 public interface ChannelDownstreamHandler extends ChannelHandler {
     void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception;

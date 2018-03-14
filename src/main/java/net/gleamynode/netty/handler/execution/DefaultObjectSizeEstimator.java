@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import net.gleamynode.netty.array.ByteArray;
+import net.gleamynode.netty.buffer.ChannelBuffer;
 import net.gleamynode.netty.channel.MessageEvent;
 
 public class DefaultObjectSizeEstimator implements ObjectSizeEstimator {
@@ -56,8 +56,8 @@ public class DefaultObjectSizeEstimator implements ObjectSizeEstimator {
             answer += estimateSize(((ChannelEventRunnable) o).getEvent());
         } else if (o instanceof MessageEvent) {
             answer += estimateSize(((MessageEvent) o).getMessage());
-        } else if (o instanceof ByteArray) {
-            answer += ((ByteArray) o).length();
+        } else if (o instanceof ChannelBuffer) {
+            answer += ((ChannelBuffer) o).capacity();
         } else if (o instanceof byte[]) {
             answer += ((byte[]) o).length;
         } else if (o instanceof ByteBuffer) {

@@ -15,7 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.array;
+package net.gleamynode.netty.buffer;
 
 import java.io.DataOutput;
 import java.io.DataOutputStream;
@@ -29,23 +29,19 @@ import java.io.OutputStream;
  *
  * @version $Rev$, $Date$
  *
- * @see ByteArrayInputStream
- * @see ByteArrayBufferInputStream
- * @apiviz.uses net.gleamynode.netty.array.CompositeByteArray
+ * @see ChannelBufferInputStream
+ * @apiviz.uses net.gleamynode.netty.buffer.ChannelBuffer
  */
-public class ByteArrayOutputStream extends OutputStream implements DataOutput {
+public class ChannelBufferOutputStream extends OutputStream implements DataOutput {
 
-    private final CompositeByteArray array;
-    private final boolean zeroCopy;
+    private final ChannelBuffer buffer;
     private final DataOutputStream utf8out = new DataOutputStream(this);
 
-    public ByteArrayOutputStream() {
-        this(CompositeByteArray.DEFAULT_CAPACITY_INCREMENT, false);
-    }
-
-    public ByteArrayOutputStream(int capacityIncrement, boolean zeroCopy) {
-        array = new CompositeByteArray(capacityIncrement);
-        this.zeroCopy = zeroCopy;
+    public ChannelBufferOutputStream(ChannelBuffer buffer) {
+        if (buffer == null) {
+            throw new NullPointerException("buffer");
+        }
+        this.buffer = buffer;
     }
 
     @Override
@@ -54,23 +50,17 @@ public class ByteArrayOutputStream extends OutputStream implements DataOutput {
             return;
         }
 
-        if (zeroCopy) {
-            array.write(b, off, len);
-        } else {
-            byte[] copy = new byte[len];
-            System.arraycopy(b, off, copy, 0, len);
-            array.write(copy);
-        }
+        buffer.writeBytes(b, off, len);
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        array.write(zeroCopy? b : b.clone());
+        buffer.writeBytes(b);
     }
 
     @Override
     public void write(int b) throws IOException {
-        array.write8((byte) b);
+        buffer.writeByte((byte) b);
     }
 
     public void writeBoolean(boolean v) throws IOException {
@@ -108,22 +98,22 @@ public class ByteArrayOutputStream extends OutputStream implements DataOutput {
     }
 
     public void writeInt(int v) throws IOException {
-        array.writeBE32(v);
+        buffer.writeInt(v);
     }
 
     public void writeLong(long v) throws IOException {
-        array.writeBE64(v);
+        buffer.writeLong(v);
     }
 
     public void writeShort(int v) throws IOException {
-        array.writeBE16((short) v);
+        buffer.writeShort((short) v);
     }
 
     public void writeUTF(String s) throws IOException {
         utf8out.writeUTF(s);
     }
 
-    public ByteArray array() {
-        return array;
+    public ChannelBuffer buffer() {
+        return buffer;
     }
 }

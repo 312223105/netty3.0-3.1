@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -30,6 +30,7 @@ import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
 import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelSink;
 import net.gleamynode.netty.channel.socket.DefaultServerSocketChannelConfig;
 import net.gleamynode.netty.channel.socket.ServerSocketChannelConfig;
 
@@ -42,9 +43,11 @@ class NioServerSocketChannel extends AbstractServerChannel
     private final ServerSocketChannelConfig config;
 
     NioServerSocketChannel(
-            ChannelFactory factory, ChannelPipeline pipeline) {
+            ChannelFactory factory,
+            ChannelPipeline pipeline,
+            ChannelSink sink) {
 
-        super(factory, pipeline);
+        super(factory, pipeline, sink);
 
         try {
             socket = ServerSocketChannel.open();

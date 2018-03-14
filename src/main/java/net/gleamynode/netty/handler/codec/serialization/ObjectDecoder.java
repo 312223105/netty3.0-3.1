@@ -19,12 +19,11 @@ package net.gleamynode.netty.handler.codec.serialization;
 
 import java.io.StreamCorruptedException;
 
-import net.gleamynode.netty.array.ByteArray;
-import net.gleamynode.netty.array.ByteArrayBuffer;
-import net.gleamynode.netty.array.ByteArrayInputStream;
+import net.gleamynode.netty.buffer.ChannelBuffer;
+import net.gleamynode.netty.buffer.ChannelBufferInputStream;
 import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelHandlerContext;
-import net.gleamynode.netty.handler.codec.replay.ReplayingDecoder;
+import net.gleamynode.netty.handler.codec.frame.FrameDecoder;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -33,7 +32,7 @@ import net.gleamynode.netty.handler.codec.replay.ReplayingDecoder;
  * @version $Rev$, $Date$
  *
  */
-public class ObjectDecoder extends ReplayingDecoder {
+public class ObjectDecoder extends FrameDecoder {
 
     private final int maxObjectSize;
 
@@ -47,8 +46,12 @@ public class ObjectDecoder extends ReplayingDecoder {
 
     @Override
     protected Object decode(
-            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception {
-        int dataLen = buffer.readBE32();
+            ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
+        if (buffer.readableBytes() < 4) {
+            return null;
+        }
+
+        int dataLen = buffer.getInt(buffer.readerIndex());
         if (dataLen <= 0) {
             throw new StreamCorruptedException("invalid data length: " + dataLen);
         }
@@ -56,7 +59,17 @@ public class ObjectDecoder extends ReplayingDecoder {
             throw new StreamCorruptedException(
                     "data length too big: " + dataLen + " (max: " + maxObjectSize + ')');
         }
-        ByteArray data = buffer.read(dataLen);
-        return new CompactObjectInputStream(new ByteArrayInputStream(data)).readObject();
+
+        if (buffer.readableBytes() < dataLen + 4) {
+            return null;
+        }
+
+        buffer.skipBytes(4);
+        try {
+            return new CompactObjectInputStream(new ChannelBufferInputStream(
+                    buffer, buffer.readerIndex(), dataLen)).readObject();
+        } finally {
+            buffer.skipBytes(dataLen);
+        }
     }
 }

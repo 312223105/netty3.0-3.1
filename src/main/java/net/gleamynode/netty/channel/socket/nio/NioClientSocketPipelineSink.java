@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -64,10 +64,10 @@ class NioClientSocketPipelineSink extends AbstractChannelSink {
         }
     }
 
-    public void elementSunk(
-            ChannelPipeline pipeline, ChannelEvent element) throws Exception {
-        if (element instanceof ChannelStateEvent) {
-            ChannelStateEvent event = (ChannelStateEvent) element;
+    public void eventSunk(
+            ChannelPipeline pipeline, ChannelEvent e) throws Exception {
+        if (e instanceof ChannelStateEvent) {
+            ChannelStateEvent event = (ChannelStateEvent) e;
             NioClientSocketChannel channel =
                 (NioClientSocketChannel) event.getChannel();
             ChannelFuture future = event.getFuture();
@@ -98,8 +98,8 @@ class NioClientSocketPipelineSink extends AbstractChannelSink {
                 NioWorker.setInterestOps(channel, future, ((Integer) value).intValue());
                 break;
             }
-        } else if (element instanceof MessageEvent) {
-            MessageEvent event = (MessageEvent) element;
+        } else if (e instanceof MessageEvent) {
+            MessageEvent event = (MessageEvent) e;
             NioSocketChannel channel = (NioSocketChannel) event.getChannel();
             channel.writeBuffer.offer(event);
             NioWorker.write(channel);
@@ -125,8 +125,10 @@ class NioClientSocketPipelineSink extends AbstractChannelSink {
             SocketAddress remoteAddress) {
         try {
             if (channel.socket.connect(remoteAddress)) {
+                NioWorker worker = nextWorker();
+                channel.setWorker(worker);
                 future.setSuccess();
-                nextWorker().register(channel);
+                worker.register(channel);
             } else {
                 future.addListener(new ChannelFutureListener() {
                     public void operationComplete(ChannelFuture future) {
@@ -271,8 +273,10 @@ class NioClientSocketPipelineSink extends AbstractChannelSink {
             try {
                 if (ch.socket.finishConnect()) {
                     k.cancel();
+                    NioWorker worker = nextWorker();
+                    ch.setWorker(worker);
                     ch.connectFuture.setSuccess();
-                    nextWorker().register(ch);
+                    worker.register(ch);
                 }
             } catch (IOException e) {
                 k.cancel();

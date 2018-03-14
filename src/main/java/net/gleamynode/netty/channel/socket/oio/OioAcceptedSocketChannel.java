@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,6 +28,7 @@ import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelPipeline;
+import net.gleamynode.netty.channel.ChannelSink;
 
 class OioAcceptedSocketChannel extends OioSocketChannel {
 
@@ -35,10 +36,13 @@ class OioAcceptedSocketChannel extends OioSocketChannel {
     private final OutputStream out;
 
     OioAcceptedSocketChannel(
-            Channel parent, ChannelFactory factory,
-            ChannelPipeline pipeline, Socket socket) {
+            Channel parent,
+            ChannelFactory factory,
+            ChannelPipeline pipeline,
+            ChannelSink sink,
+            Socket socket) {
 
-        super(parent, factory, pipeline, socket);
+        super(parent, factory, pipeline, sink, socket);
 
         try {
             in = new PushbackInputStream(socket.getInputStream(), 1);

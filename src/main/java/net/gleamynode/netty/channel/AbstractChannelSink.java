@@ -17,6 +17,7 @@
  */
 package net.gleamynode.netty.channel;
 
+import static net.gleamynode.netty.channel.Channels.*;
 
 /**
  *
@@ -24,18 +25,16 @@ package net.gleamynode.netty.channel;
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
- *
- * @apiviz.hidden
  */
 public abstract class AbstractChannelSink implements ChannelSink {
 
-    public void exceptionCaught(ChannelPipeline chain,
+    public void exceptionCaught(ChannelPipeline pipeline,
             ChannelEvent event, ChannelPipelineException cause) throws Exception {
         Throwable actualCause = cause.getCause();
         if (actualCause == null) {
             actualCause = cause;
         }
 
-        ChannelUtil.fireExceptionCaught(event.getChannel(), actualCause);
+        fireExceptionCaught(event.getChannel(), actualCause);
     }
 }

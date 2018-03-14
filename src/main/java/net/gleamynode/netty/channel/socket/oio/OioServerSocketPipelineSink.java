@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -48,22 +48,22 @@ class OioServerSocketPipelineSink extends AbstractChannelSink {
         this.workerExecutor = workerExecutor;
     }
 
-    public void elementSunk(
-            ChannelPipeline pipeline, ChannelEvent element) throws Exception {
-        Channel channel = element.getChannel();
+    public void eventSunk(
+            ChannelPipeline pipeline, ChannelEvent e) throws Exception {
+        Channel channel = e.getChannel();
         if (channel instanceof OioServerSocketChannel) {
-            handleServerSocket(element);
+            handleServerSocket(e);
         } else if (channel instanceof OioAcceptedSocketChannel) {
-            handleAcceptedSocket(element);
+            handleAcceptedSocket(e);
         }
     }
 
-    private void handleServerSocket(ChannelEvent element) {
-        if (!(element instanceof ChannelStateEvent)) {
+    private void handleServerSocket(ChannelEvent e) {
+        if (!(e instanceof ChannelStateEvent)) {
             return;
         }
 
-        ChannelStateEvent event = (ChannelStateEvent) element;
+        ChannelStateEvent event = (ChannelStateEvent) e;
         OioServerSocketChannel channel =
             (OioServerSocketChannel) event.getChannel();
         ChannelFuture future = event.getFuture();
@@ -86,9 +86,9 @@ class OioServerSocketPipelineSink extends AbstractChannelSink {
         }
     }
 
-    private void handleAcceptedSocket(ChannelEvent element) {
-        if (element instanceof ChannelStateEvent) {
-            ChannelStateEvent event = (ChannelStateEvent) element;
+    private void handleAcceptedSocket(ChannelEvent e) {
+        if (e instanceof ChannelStateEvent) {
+            ChannelStateEvent event = (ChannelStateEvent) e;
             OioAcceptedSocketChannel channel =
                 (OioAcceptedSocketChannel) event.getChannel();
             ChannelFuture future = event.getFuture();
@@ -111,8 +111,8 @@ class OioServerSocketPipelineSink extends AbstractChannelSink {
                 OioWorker.setInterestOps(channel, future, ((Integer) value).intValue());
                 break;
             }
-        } else if (element instanceof MessageEvent) {
-            MessageEvent event = (MessageEvent) element;
+        } else if (e instanceof MessageEvent) {
+            MessageEvent event = (MessageEvent) e;
             OioSocketChannel channel = (OioSocketChannel) event.getChannel();
             ChannelFuture future = event.getFuture();
             Object message = event.getMessage();
@@ -182,11 +182,12 @@ class OioServerSocketPipelineSink extends AbstractChannelSink {
                     try {
                         ChannelPipeline pipeline =
                             channel.getConfig().getPipelineFactory().getPipeline();
-                        pipeline.setSink(
-                                ((OioServerSocketChannelFactory) channel.getFactory()).sink);
                         final OioAcceptedSocketChannel acceptedChannel =
                             new OioAcceptedSocketChannel(
-                                    channel, channel.getFactory(), pipeline,
+                                    channel,
+                                    channel.getFactory(),
+                                    pipeline,
+                                    OioServerSocketPipelineSink.this,
                                     acceptedSocket);
                         workerExecutor.execute(
                                 new NamePreservingRunnable(

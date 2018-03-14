@@ -25,17 +25,16 @@ package net.gleamynode.netty.channel;
  *
  * @version $Rev$, $Date$
  *
- * @apiviz.hidden
  * @apiviz.owns net.gleamynode.netty.channel.ChannelHandler
  */
 public interface ChannelHandlerContext {
-    ChannelPipeline getChain();
+    ChannelPipeline getPipeline();
 
     String getName();
     ChannelHandler getHandler();
     boolean canHandleUpstream();
     boolean canHandleDownstream();
 
-    void sendUpstream(ChannelEvent element);
-    void sendDownstream(ChannelEvent element);
+    void sendUpstream(ChannelEvent e);
+    void sendDownstream(ChannelEvent e);
 }

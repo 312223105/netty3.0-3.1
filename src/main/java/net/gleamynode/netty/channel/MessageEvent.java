@@ -19,6 +19,13 @@ package net.gleamynode.netty.channel;
 
 import java.net.SocketAddress;
 
+/**
+ *
+ * @author The Netty Project (netty@googlegroups.com)
+ * @author Trustin Lee (trustin@gmail.com)
+ *
+ * @version $Rev$, $Date$
+ */
 public interface MessageEvent extends ChannelEvent {
     Object getMessage();
     SocketAddress getRemoteAddress();

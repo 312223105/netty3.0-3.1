@@ -31,8 +31,10 @@ import java.net.SocketAddress;
 public abstract class AbstractServerChannel extends AbstractChannel {
 
     protected AbstractServerChannel(
-            ChannelFactory factory, ChannelPipeline pipeline) {
-        super(null, factory, pipeline);
+            ChannelFactory factory,
+            ChannelPipeline pipeline,
+            ChannelSink sink) {
+        super(null, factory, pipeline, sink);
     }
 
     @Override

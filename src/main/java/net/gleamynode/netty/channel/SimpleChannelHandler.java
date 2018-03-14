@@ -28,8 +28,6 @@ import java.util.logging.Logger;
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
- *
- * @apiviz.landmark
  */
 public class SimpleChannelHandler implements ChannelUpstreamHandler {
 

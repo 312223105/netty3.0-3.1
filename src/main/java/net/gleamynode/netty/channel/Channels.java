@@ -27,29 +27,67 @@ import java.util.Map;
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
+ *
+ * @apiviz.landmark
  */
-public class ChannelUtil {
+public class Channels {
 
-    public static ChannelPipeline newPipeline() {
+    // pipeline factory methods
+
+    public static ChannelPipeline pipeline() {
         return new DefaultChannelPipeline();
     }
 
-    public static ChannelPipeline newPipeline(ChannelPipeline pipeline) {
-        ChannelPipeline newChain = newPipeline();
+    public static ChannelPipeline pipeline(ChannelPipeline pipeline) {
+        ChannelPipeline newPipeline = pipeline();
         for (Map.Entry<String, ChannelHandler> e: pipeline.toMap().entrySet()) {
-            newChain.addLast(e.getKey(), e.getValue());
+            newPipeline.addLast(e.getKey(), e.getValue());
         }
-        return newChain;
+        return newPipeline;
     }
 
-    public static ChannelPipelineFactory newPipelineFactory(
-            final ChannelPipeline chain) {
+    public static ChannelPipelineFactory pipelineFactory(
+            final ChannelPipeline pipeline) {
         return new ChannelPipelineFactory() {
             public ChannelPipeline getPipeline() {
-                return newPipeline(chain);
+                return pipeline(pipeline);
             }
         };
     }
+
+    // future factory methods
+
+    public static ChannelFuture future(Channel channel) {
+        return future(channel, false);
+    }
+
+    public static ChannelFuture future(Channel channel, boolean cancellable) {
+        return new DefaultChannelFuture(channel, cancellable);
+    }
+
+    public static ChannelFuture succeededFuture(Channel channel) {
+        if (channel instanceof AbstractChannel) {
+            return ((AbstractChannel) channel).getSucceededFuture();
+        } else {
+            return new SucceededChannelFuture(channel);
+        }
+    }
+
+    public static ChannelFuture failedFuture(Channel channel, Throwable cause) {
+        return new FailedChannelFuture(channel, cause);
+    }
+
+    // event factory methods
+
+    public static MessageEvent messageEvent(Channel channel, ChannelFuture future, Object message) {
+        return messageEvent(channel, future, message, null);
+    }
+
+    public static MessageEvent messageEvent(Channel channel, ChannelFuture future, Object message, SocketAddress remoteAddress) {
+        return new DefaultMessageEvent(channel, future, message, remoteAddress);
+    }
+
+    // event emission methods
 
     public static void fireChannelOpen(Channel channel) {
         if (channel.getParent() != null) {
@@ -57,7 +95,7 @@ public class ChannelUtil {
         }
         channel.getPipeline().sendUpstream(
                 new DefaultChannelStateEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         ChannelState.OPEN, Boolean.TRUE));
     }
 
@@ -65,14 +103,14 @@ public class ChannelUtil {
             ChannelHandlerContext ctx, Channel channel) {
 
         ctx.sendUpstream(new DefaultChannelStateEvent(
-                channel, getSucceededFuture(channel),
+                channel, succeededFuture(channel),
                 ChannelState.OPEN, Boolean.TRUE));
     }
 
     public static void fireChannelBound(Channel channel, SocketAddress localAddress) {
         channel.getPipeline().sendUpstream(
                 new DefaultChannelStateEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         ChannelState.BOUND, localAddress));
     }
 
@@ -80,14 +118,14 @@ public class ChannelUtil {
             ChannelHandlerContext ctx, Channel channel, SocketAddress localAddress) {
 
         ctx.sendUpstream(new DefaultChannelStateEvent(
-                channel, getSucceededFuture(channel),
+                channel, succeededFuture(channel),
                 ChannelState.BOUND, localAddress));
     }
 
     public static void fireChannelConnected(Channel channel, SocketAddress remoteAddress) {
         channel.getPipeline().sendUpstream(
                 new DefaultChannelStateEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         ChannelState.CONNECTED, remoteAddress));
     }
 
@@ -95,7 +133,7 @@ public class ChannelUtil {
             ChannelHandlerContext ctx, Channel channel, SocketAddress remoteAddress) {
 
         ctx.sendUpstream(new DefaultChannelStateEvent(
-                channel, getSucceededFuture(channel),
+                channel, succeededFuture(channel),
                 ChannelState.CONNECTED, remoteAddress));
     }
 
@@ -103,36 +141,31 @@ public class ChannelUtil {
         fireMessageReceived(channel, message, null);
     }
 
-    public static void messageReceived(
-            ChannelHandlerContext ctx, Channel channel, Object message) {
-        fireMessageReceived(ctx, channel, message, null);
-    }
-
     public static void fireMessageReceived(Channel channel, Object message, SocketAddress remoteAddress) {
         channel.getPipeline().sendUpstream(
                 new DefaultMessageEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         message, remoteAddress));
     }
 
     public static void fireMessageReceived(
             ChannelHandlerContext ctx, Channel channel, Object message) {
         ctx.sendUpstream(new DefaultMessageEvent(
-                channel, getSucceededFuture(channel), message, null));
+                channel, succeededFuture(channel), message, null));
     }
 
     public static void fireMessageReceived(
             ChannelHandlerContext ctx, Channel channel,
             Object message, SocketAddress remoteAddress) {
         ctx.sendUpstream(new DefaultMessageEvent(
-                channel, getSucceededFuture(channel), message, remoteAddress));
+                channel, succeededFuture(channel), message, remoteAddress));
     }
 
     public static void fireChannelInterestChanged(Channel channel, int interestOps) {
         validateInterestOps(interestOps);
         channel.getPipeline().sendUpstream(
                 new DefaultChannelStateEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         ChannelState.INTEREST_OPS, Integer.valueOf(interestOps)));
     }
 
@@ -142,40 +175,40 @@ public class ChannelUtil {
         validateInterestOps(interestOps);
         ctx.sendUpstream(
                 new DefaultChannelStateEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         ChannelState.INTEREST_OPS, Integer.valueOf(interestOps)));
     }
 
     public static void fireChannelDisconnected(Channel channel) {
         channel.getPipeline().sendUpstream(
                 new DefaultChannelStateEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         ChannelState.CONNECTED, null));
     }
 
     public static void fireChannelDisconnected(
             ChannelHandlerContext ctx, Channel channel) {
         ctx.sendUpstream(new DefaultChannelStateEvent(
-                channel, getSucceededFuture(channel),
+                channel, succeededFuture(channel),
                 ChannelState.CONNECTED, null));
     }
 
     public static void fireChannelUnbound(Channel channel) {
         channel.getPipeline().sendUpstream(new DefaultChannelStateEvent(
-                channel, getSucceededFuture(channel), ChannelState.BOUND, null));
+                channel, succeededFuture(channel), ChannelState.BOUND, null));
     }
 
     public static void fireChannelUnbound(
             ChannelHandlerContext ctx, Channel channel) {
 
         ctx.sendUpstream(new DefaultChannelStateEvent(
-                channel, getSucceededFuture(channel), ChannelState.BOUND, null));
+                channel, succeededFuture(channel), ChannelState.BOUND, null));
     }
 
     public static void fireChannelClosed(Channel channel) {
         channel.getPipeline().sendUpstream(
                 new DefaultChannelStateEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         ChannelState.OPEN, Boolean.FALSE));
         if (channel.getParent() != null) {
             fireChildChannelStateChanged(channel.getParent(), channel);
@@ -186,39 +219,31 @@ public class ChannelUtil {
             ChannelHandlerContext ctx, Channel channel) {
         ctx.sendUpstream(
                 new DefaultChannelStateEvent(
-                        channel, getSucceededFuture(channel),
+                        channel, succeededFuture(channel),
                         ChannelState.OPEN, Boolean.FALSE));
     }
 
     public static void fireExceptionCaught(Channel channel, Throwable cause) {
         channel.getPipeline().sendUpstream(
                 new DefaultExceptionEvent(
-                        channel, getSucceededFuture(channel), cause));
+                        channel, succeededFuture(channel), cause));
     }
 
     public static void fireExceptionCaught(
             ChannelHandlerContext ctx, Channel channel, Throwable cause) {
         ctx.sendUpstream(new DefaultExceptionEvent(
-                channel, getSucceededFuture(channel), cause));
+                channel, succeededFuture(channel), cause));
     }
 
     private static void fireChildChannelStateChanged(
             Channel channel, Channel childChannel) {
         channel.getPipeline().sendUpstream(
                 new DefaultChildChannelStateEvent(
-                        channel, getSucceededFuture(channel), childChannel));
-    }
-
-    private static ChannelFuture getSucceededFuture(Channel channel) {
-        if (channel instanceof AbstractChannel) {
-            return ((AbstractChannel) channel).getSucceededFuture();
-        } else {
-            return new SucceededChannelFuture(channel);
-        }
+                        channel, succeededFuture(channel), childChannel));
     }
 
     public static ChannelFuture bind(Channel channel, SocketAddress localAddress) {
-        ChannelFuture future = new DefaultChannelFuture(channel, false);
+        ChannelFuture future = future(channel);
         channel.getPipeline().sendDownstream(new DefaultChannelStateEvent(
                 channel, future, ChannelState.BOUND, localAddress));
         return future;
@@ -233,7 +258,7 @@ public class ChannelUtil {
     }
 
     public static ChannelFuture connect(Channel channel, SocketAddress remoteAddress) {
-        ChannelFuture future = new DefaultChannelFuture(channel, true);
+        ChannelFuture future = future(channel, true);
         channel.getPipeline().sendDownstream(new DefaultChannelStateEvent(
                 channel, future, ChannelState.CONNECTED, remoteAddress));
         return future;
@@ -258,7 +283,7 @@ public class ChannelUtil {
     }
 
     public static ChannelFuture write(Channel channel, Object message, SocketAddress remoteAddress) {
-        ChannelFuture future = new DefaultChannelFuture(channel, false);
+        ChannelFuture future = future(channel);
         channel.getPipeline().sendDownstream(
                 new DefaultMessageEvent(channel, future, message, remoteAddress));
         return future;
@@ -275,7 +300,7 @@ public class ChannelUtil {
         validateInterestOps(interestOps);
         validateDownstreamInterestOps(channel, interestOps);
 
-        ChannelFuture future = new DefaultChannelFuture(channel, false);
+        ChannelFuture future = future(channel);
         channel.getPipeline().sendDownstream(new DefaultChannelStateEvent(
                 channel, future, ChannelState.INTEREST_OPS, Integer.valueOf(interestOps)));
         return future;
@@ -294,7 +319,7 @@ public class ChannelUtil {
     }
 
     public static ChannelFuture disconnect(Channel channel) {
-        ChannelFuture future = new DefaultChannelFuture(channel, false);
+        ChannelFuture future = future(channel);
         channel.getPipeline().sendDownstream(new DefaultChannelStateEvent(
                 channel, future, ChannelState.CONNECTED, null));
         return future;
@@ -307,7 +332,7 @@ public class ChannelUtil {
     }
 
     public static ChannelFuture close(Channel channel) {
-        ChannelFuture future = new DefaultChannelFuture(channel, false);
+        ChannelFuture future = future(channel);
         channel.getPipeline().sendDownstream(new DefaultChannelStateEvent(
                 channel, future, ChannelState.OPEN, Boolean.FALSE));
         return future;
@@ -338,7 +363,7 @@ public class ChannelUtil {
         }
     }
 
-    private ChannelUtil() {
+    private Channels() {
         // Unused
     }
 }

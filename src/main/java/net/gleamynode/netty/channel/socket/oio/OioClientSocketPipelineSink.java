@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.PushbackInputStream;
 import java.net.SocketAddress;
@@ -41,12 +41,12 @@ class OioClientSocketPipelineSink extends AbstractChannelSink {
         this.workerExecutor = workerExecutor;
     }
 
-    public void elementSunk(
-            ChannelPipeline pipeline, ChannelEvent element) throws Exception {
-        OioClientSocketChannel channel = (OioClientSocketChannel) element.getChannel();
-        ChannelFuture future = element.getFuture();
-        if (element instanceof ChannelStateEvent) {
-            ChannelStateEvent stateEvent = (ChannelStateEvent) element;
+    public void eventSunk(
+            ChannelPipeline pipeline, ChannelEvent e) throws Exception {
+        OioClientSocketChannel channel = (OioClientSocketChannel) e.getChannel();
+        ChannelFuture future = e.getFuture();
+        if (e instanceof ChannelStateEvent) {
+            ChannelStateEvent stateEvent = (ChannelStateEvent) e;
             ChannelState state = stateEvent.getState();
             Object value = stateEvent.getValue();
             switch (state) {
@@ -73,10 +73,10 @@ class OioClientSocketPipelineSink extends AbstractChannelSink {
                 OioWorker.setInterestOps(channel, future, ((Integer) value).intValue());
                 break;
             }
-        } else if (element instanceof MessageEvent) {
+        } else if (e instanceof MessageEvent) {
             OioWorker.write(
                     channel, future,
-                    ((MessageEvent) element).getMessage());
+                    ((MessageEvent) e).getMessage());
         }
     }
 

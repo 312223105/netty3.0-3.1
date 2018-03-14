@@ -17,6 +17,8 @@
  */
 package net.gleamynode.netty.bootstrap;
 
+import static net.gleamynode.netty.channel.Channels.*;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,7 +34,6 @@ import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelHandler;
 import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.ChannelPipelineFactory;
-import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.SimpleChannelHandler;
 
 /**
@@ -48,9 +49,8 @@ public class Bootstrap {
     private static Logger logger = Logger.getLogger(Bootstrap.class.getName());
 
     private volatile ChannelFactory factory;
-    private volatile ChannelPipeline pipeline = ChannelUtil.newPipeline();
-    private volatile ChannelPipelineFactory pipelineFactory =
-        ChannelUtil.newPipelineFactory(pipeline);
+    private volatile ChannelPipeline pipeline = pipeline();
+    private volatile ChannelPipelineFactory pipelineFactory = pipelineFactory(pipeline);
     private volatile Map<String, Object> options = new HashMap<String, Object>();
 
     public Bootstrap() {
@@ -90,7 +90,7 @@ public class Bootstrap {
             throw new NullPointerException("pipeline");
         }
         pipeline = this.pipeline;
-        pipelineFactory = ChannelUtil.newPipelineFactory(pipeline);
+        pipelineFactory = pipelineFactory(pipeline);
     }
 
     public Map<String, ChannelHandler> getPipelineAsMap() {
@@ -113,7 +113,7 @@ public class Bootstrap {
                     LinkedHashMap.class.getName() + ".");
         }
 
-        ChannelPipeline pipeline = ChannelUtil.newPipeline();
+        ChannelPipeline pipeline = pipeline();
         for(Map.Entry<String, ChannelHandler> e: pipelineMap.entrySet()) {
             pipeline.addLast(e.getKey(), e.getValue());
         }

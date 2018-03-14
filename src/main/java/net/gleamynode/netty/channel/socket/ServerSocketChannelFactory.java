@@ -26,6 +26,7 @@ import net.gleamynode.netty.channel.ChannelPipeline;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.has net.gleamynode.netty.channel.socket.ServerSocketChannel oneway - - creates
  */
 public interface ServerSocketChannelFactory extends ChannelFactory {
     ServerSocketChannel newChannel(ChannelPipeline pipeline);

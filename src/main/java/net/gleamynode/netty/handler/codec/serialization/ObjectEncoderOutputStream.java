@@ -23,8 +23,9 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
-import net.gleamynode.netty.array.ByteArray;
-import net.gleamynode.netty.array.ByteArrayOutputStream;
+import net.gleamynode.netty.buffer.ChannelBuffer;
+import net.gleamynode.netty.buffer.ChannelBufferOutputStream;
+import net.gleamynode.netty.buffer.ChannelBuffers;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -37,14 +38,14 @@ public class ObjectEncoderOutputStream extends OutputStream implements
         ObjectOutput {
 
     private final DataOutputStream out;
-    private final int capacityIncrement;
+    private final int estimatedLength;
 
-    public ObjectEncoderOutputStream(OutputStream out, int capacityIncrement) {
+    public ObjectEncoderOutputStream(OutputStream out, int estimatedLength) {
         if (out == null) {
             throw new NullPointerException("out");
         }
-        if (capacityIncrement < 8) {
-            throw new IllegalArgumentException("capacityIncrement: " + capacityIncrement);
+        if (estimatedLength < 8) {
+            throw new IllegalArgumentException("estimatedLength: " + estimatedLength);
         }
 
         if (out instanceof DataOutputStream) {
@@ -52,19 +53,20 @@ public class ObjectEncoderOutputStream extends OutputStream implements
         } else {
             this.out = new DataOutputStream(out);
         }
-        this.capacityIncrement = capacityIncrement;
+        this.estimatedLength = estimatedLength;
     }
 
     public void writeObject(Object obj) throws IOException {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream(capacityIncrement, false);
+        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.dynamicBuffer(estimatedLength));
         ObjectOutputStream oout = new CompactObjectOutputStream(bout);
         oout.writeObject(obj);
         oout.flush();
         oout.close();
-    
-        ByteArray array = bout.array();
-        writeInt(array.length());
-        array.copyTo(this);
+
+        ChannelBuffer buffer = bout.buffer();
+        int objectSize = buffer.readableBytes();
+        writeInt(objectSize);
+        buffer.getBytes(0, this, objectSize);
     }
 
     @Override

@@ -17,6 +17,8 @@
  */
 package net.gleamynode.netty.bootstrap;
 
+import static net.gleamynode.netty.channel.Channels.*;
+
 import java.net.SocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -30,7 +32,6 @@ import net.gleamynode.netty.channel.ChannelPipelineCoverage;
 import net.gleamynode.netty.channel.ChannelPipelineException;
 import net.gleamynode.netty.channel.ChannelStateEvent;
 import net.gleamynode.netty.channel.ExceptionEvent;
-import net.gleamynode.netty.channel.FailedChannelFuture;
 import net.gleamynode.netty.channel.SimpleChannelHandler;
 
 /**
@@ -150,7 +151,7 @@ public class ClientBootstrap extends Bootstrap {
             ctx.sendUpstream(e);
             if (!finished) {
                 e.getChannel().close();
-                futureQueue.offer(new FailedChannelFuture(e.getChannel(), e.getCause()));
+                futureQueue.offer(failedFuture(e.getChannel(), e.getCause()));
                 finished = true;
             }
         }

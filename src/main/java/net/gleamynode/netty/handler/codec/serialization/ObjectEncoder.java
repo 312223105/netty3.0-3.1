@@ -17,15 +17,17 @@
  */
 package net.gleamynode.netty.handler.codec.serialization;
 
-import java.io.ByteArrayOutputStream;
+import static net.gleamynode.netty.buffer.ChannelBuffers.*;
+import static net.gleamynode.netty.channel.Channels.*;
+
 import java.io.ObjectOutputStream;
 
-import net.gleamynode.netty.array.HeapByteArray;
+import net.gleamynode.netty.buffer.ChannelBuffer;
+import net.gleamynode.netty.buffer.ChannelBufferOutputStream;
 import net.gleamynode.netty.channel.ChannelDownstreamHandler;
 import net.gleamynode.netty.channel.ChannelEvent;
 import net.gleamynode.netty.channel.ChannelHandlerContext;
 import net.gleamynode.netty.channel.ChannelPipelineCoverage;
-import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.MessageEvent;
 
 /**
@@ -37,47 +39,41 @@ import net.gleamynode.netty.channel.MessageEvent;
  */
 @ChannelPipelineCoverage("all")
 public class ObjectEncoder implements ChannelDownstreamHandler {
-    // TODO Rewrite once gathering write is properly supported by JDK.
-    //      See http://bugs.sun.com/view_bug.do?bug_id=6210541
     private static final byte[] LENGTH_PLACEHOLDER = new byte[4];
 
-    private final int initialCapacity;
+    private final int estimatedLength;
 
     public ObjectEncoder() {
         this(512);
     }
 
-    public ObjectEncoder(int initialCapacity) {
-        if (initialCapacity <= 0) {
+    public ObjectEncoder(int estimatedLength) {
+        if (estimatedLength <= 0) {
             throw new IllegalArgumentException(
-                    "initialCapacity: " + initialCapacity);
+                    "estimatedLength: " + estimatedLength);
         }
-        this.initialCapacity = initialCapacity;
+        this.estimatedLength = estimatedLength;
     }
 
     public void handleDownstream(
-            ChannelHandlerContext context, ChannelEvent element) throws Exception {
-        if (!(element instanceof MessageEvent)) {
-            context.sendDownstream(element);
+            ChannelHandlerContext context, ChannelEvent evt) throws Exception {
+        if (!(evt instanceof MessageEvent)) {
+            context.sendDownstream(evt);
             return;
         }
 
-        MessageEvent e = (MessageEvent) element;
-        ByteArrayOutputStream bout = new ByteArrayOutputStream(initialCapacity);
+        MessageEvent e = (MessageEvent) evt;
+        ChannelBufferOutputStream bout =
+            new ChannelBufferOutputStream(dynamicBuffer(estimatedLength));
         bout.write(LENGTH_PLACEHOLDER);
         ObjectOutputStream oout = new CompactObjectOutputStream(bout);
         oout.writeObject(e.getMessage());
         oout.flush();
         oout.close();
 
-        byte[] msg = bout.toByteArray();
-        int bodyLen = msg.length - 4;
-        msg[0] = (byte) (bodyLen >>> 24);
-        msg[1] = (byte) (bodyLen >>> 16);
-        msg[2] = (byte) (bodyLen >>>  8);
-        msg[3] = (byte) (bodyLen >>>  0);
+        ChannelBuffer msg = bout.buffer();
+        msg.setInt(0, msg.writerIndex() - 4);
 
-        ChannelUtil.write(
-                context, e.getChannel(), e.getFuture(), new HeapByteArray(msg));
+        write(context, e.getChannel(), e.getFuture(), msg);
     }
 }

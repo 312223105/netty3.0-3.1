@@ -27,7 +27,7 @@ import net.gleamynode.netty.channel.socket.ServerSocketChannelFactory;
 public class OioServerSocketChannelFactory implements ServerSocketChannelFactory {
 
     final Executor bossExecutor;
-    final ChannelSink sink;
+    private final ChannelSink sink;
 
     public OioServerSocketChannelFactory(
             Executor bossExecutor, Executor workerExecutor) {
@@ -42,7 +42,6 @@ public class OioServerSocketChannelFactory implements ServerSocketChannelFactory
     }
 
     public ServerSocketChannel newChannel(ChannelPipeline pipeline) {
-        pipeline.setSink(sink);
-        return new OioServerSocketChannel(this, pipeline);
+        return new OioServerSocketChannel(this, pipeline, sink);
     }
 }

@@ -51,7 +51,7 @@ public class ExecutionHandler implements ChannelUpstreamHandler {
     }
 
     public void handleUpstream(
-            ChannelHandlerContext context, ChannelEvent element) throws Exception {
-        executor.execute(new ChannelEventRunnable(context, element));
+            ChannelHandlerContext context, ChannelEvent e) throws Exception {
+        executor.execute(new ChannelEventRunnable(context, e));
     }
 }

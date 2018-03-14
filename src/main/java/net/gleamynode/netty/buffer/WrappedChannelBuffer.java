@@ -15,9 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.array;
-
-import java.util.NoSuchElementException;
+package net.gleamynode.netty.buffer;
 
 /**
  * @author The Netty Project (netty@googlegroups.com)
@@ -26,21 +24,6 @@ import java.util.NoSuchElementException;
  * @version $Rev$, $Date$
  *
  */
-public abstract class AbstractByteArrayBuffer extends AbstractByteArray implements ByteArrayBuffer {
-
-    public ByteArray read(ByteArrayIndexFinder endIndexFinder) {
-        long endIndex = indexOf(firstIndex(), endIndexFinder);
-        if (endIndex == NOT_FOUND) {
-            throw new NoSuchElementException();
-        }
-        return read((int) endIndex - firstIndex());
-    }
-
-    public void skip(ByteArrayIndexFinder firstIndexFindex) {
-        long newFirstIndex = indexOf(firstIndex(), firstIndexFindex);
-        if (newFirstIndex == NOT_FOUND) {
-            throw new NoSuchElementException();
-        }
-        skip((int) newFirstIndex - firstIndex());
-    }
+public interface WrappedChannelBuffer extends ChannelBuffer {
+    ChannelBuffer unwrap();
 }

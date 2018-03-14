@@ -23,7 +23,6 @@ package net.gleamynode.netty.channel;
  * @author Trustin Lee (trustin@gmail.com)
  *
  * @version $Rev$, $Date$
- *
  */
 public enum ChannelState {
     OPEN,

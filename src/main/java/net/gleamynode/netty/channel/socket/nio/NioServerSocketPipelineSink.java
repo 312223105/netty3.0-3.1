@@ -17,7 +17,7 @@
  */
 package net.gleamynode.netty.channel.socket.nio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -55,22 +55,22 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
         }
     }
 
-    public void elementSunk(
-            ChannelPipeline pipeline, ChannelEvent element) throws Exception {
-        Channel channel = element.getChannel();
+    public void eventSunk(
+            ChannelPipeline pipeline, ChannelEvent e) throws Exception {
+        Channel channel = e.getChannel();
         if (channel instanceof NioServerSocketChannel) {
-            handleServerSocket(element);
+            handleServerSocket(e);
         } else if (channel instanceof NioSocketChannel) {
-            handleAcceptedSocket(element);
+            handleAcceptedSocket(e);
         }
     }
 
-    private void handleServerSocket(ChannelEvent element) {
-        if (!(element instanceof ChannelStateEvent)) {
+    private void handleServerSocket(ChannelEvent e) {
+        if (!(e instanceof ChannelStateEvent)) {
             return;
         }
 
-        ChannelStateEvent event = (ChannelStateEvent) element;
+        ChannelStateEvent event = (ChannelStateEvent) e;
         NioServerSocketChannel channel =
             (NioServerSocketChannel) event.getChannel();
         ChannelFuture future = event.getFuture();
@@ -93,9 +93,9 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
         }
     }
 
-    private void handleAcceptedSocket(ChannelEvent element) {
-        if (element instanceof ChannelStateEvent) {
-            ChannelStateEvent event = (ChannelStateEvent) element;
+    private void handleAcceptedSocket(ChannelEvent e) {
+        if (e instanceof ChannelStateEvent) {
+            ChannelStateEvent event = (ChannelStateEvent) e;
             NioSocketChannel channel = (NioSocketChannel) event.getChannel();
             ChannelFuture future = event.getFuture();
             ChannelState state = event.getState();
@@ -117,8 +117,8 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
                 NioWorker.setInterestOps(channel, future, ((Integer) value).intValue());
                 break;
             }
-        } else if (element instanceof MessageEvent) {
-            MessageEvent event = (MessageEvent) element;
+        } else if (e instanceof MessageEvent) {
+            MessageEvent event = (MessageEvent) e;
             NioSocketChannel channel = (NioSocketChannel) event.getChannel();
             channel.writeBuffer.offer(event);
             NioWorker.write(channel);
@@ -193,11 +193,10 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
                     try {
                         ChannelPipeline pipeline =
                             channel.getConfig().getPipelineFactory().getPipeline();
-                        pipeline.setSink(
-                                ((NioServerSocketChannelFactory) channel.getFactory()).sink);
                         NioWorker worker = nextWorker();
                         worker.register(new NioAcceptedSocketChannel(
                                         channel.getFactory(), pipeline, channel,
+                                        NioServerSocketPipelineSink.this,
                                         acceptedSocket, worker));
                     } catch (Exception e) {
                         logger.log(

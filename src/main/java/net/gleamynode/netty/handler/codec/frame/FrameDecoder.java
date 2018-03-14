@@ -17,14 +17,13 @@
  */
 package net.gleamynode.netty.handler.codec.frame;
 
-import net.gleamynode.netty.array.ByteArray;
-import net.gleamynode.netty.array.ByteArrayBuffer;
-import net.gleamynode.netty.array.CompositeByteArray;
+import static net.gleamynode.netty.channel.Channels.*;
+import net.gleamynode.netty.buffer.ChannelBuffer;
+import net.gleamynode.netty.buffer.ChannelBuffers;
 import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelHandlerContext;
 import net.gleamynode.netty.channel.ChannelPipelineCoverage;
 import net.gleamynode.netty.channel.ChannelStateEvent;
-import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.ExceptionEvent;
 import net.gleamynode.netty.channel.MessageEvent;
 import net.gleamynode.netty.channel.SimpleChannelHandler;
@@ -39,36 +38,27 @@ import net.gleamynode.netty.channel.SimpleChannelHandler;
 @ChannelPipelineCoverage("one")
 public abstract class FrameDecoder extends SimpleChannelHandler {
 
-    private volatile CompositeByteArray cumulation = new CompositeByteArray();
+    private final ChannelBuffer cumulation = ChannelBuffers.dynamicBuffer();
 
     @Override
     public void messageReceived(
             ChannelHandlerContext ctx, MessageEvent e) throws Exception {
 
         Object m = e.getMessage();
-        if (!(m instanceof ByteArray)) {
+        if (!(m instanceof ChannelBuffer)) {
             ctx.sendUpstream(e);
             return;
         }
 
-        ByteArray input = (ByteArray) m;
-        if (input.empty()) {
+        ChannelBuffer input = (ChannelBuffer) m;
+        if (!input.isReadable()) {
             return;
         }
 
-        CompositeByteArray cumulation = this.cumulation;
-
-        // Avoid CompositeByteArray index overflow.
-        if (Integer.MAX_VALUE - cumulation.endIndex() < input.length()) {
-            CompositeByteArray newCumulation = new CompositeByteArray();
-            for (ByteArray component: cumulation) {
-                newCumulation.addLast(component);
-            }
-            this.cumulation = cumulation = newCumulation;
-        }
-
-        cumulation.addLast(input);
-        callReadFrame(ctx, e.getChannel(), cumulation);
+        ChannelBuffer cumulation = this.cumulation;
+        cumulation.discardReadBytes();
+        cumulation.writeBytes(input);
+        callDecode(ctx, e.getChannel());
     }
 
     @Override
@@ -83,16 +73,15 @@ public abstract class FrameDecoder extends SimpleChannelHandler {
         ctx.sendUpstream(e);
     }
 
-    protected abstract Object readFrame(
-            ChannelHandlerContext ctx, Channel channel, ByteArrayBuffer buffer) throws Exception;
+    protected abstract Object decode(
+            ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception;
 
-    private void callReadFrame(ChannelHandlerContext context,
-            Channel channel, CompositeByteArray cumulation) throws Exception {
-        while (!cumulation.empty()) {
-            int oldFirstIndex = cumulation.firstIndex();
-            Object frame = readFrame(context, channel, cumulation);
+    private void callDecode(ChannelHandlerContext context, Channel channel) throws Exception {
+        while (cumulation.isReadable()) {
+            int oldReaderIndex = cumulation.readerIndex();
+            Object frame = decode(context, channel, cumulation);
             if (frame == null) {
-                if (oldFirstIndex == cumulation.firstIndex()) {
+                if (oldReaderIndex == cumulation.readerIndex()) {
                     // Seems like more data is required.
                     // Let's wait for the next notification.
                     break;
@@ -101,25 +90,25 @@ public abstract class FrameDecoder extends SimpleChannelHandler {
                     // Probably it's reading on.
                     continue;
                 }
-            } else if (oldFirstIndex == cumulation.firstIndex()) {
+            } else if (oldReaderIndex == cumulation.readerIndex()) {
                 throw new IllegalStateException(
-                        "readFrame() method must consume at least one byte " +
+                        "decode() method must read at least one byte " +
                         "if it returned a frame.");
             }
 
-            ChannelUtil.fireMessageReceived(context, channel, frame);
+            fireMessageReceived(context, channel, frame);
         }
     }
 
     private void cleanup(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception {
-        if (!cumulation.empty()) {
+        if (cumulation.isReadable()) {
             // Make sure all frames were read before notifying a closed channel.
-            callReadFrame(ctx, e.getChannel(), cumulation);
-            if (!cumulation.empty()) {
+            callDecode(ctx, e.getChannel());
+            if (cumulation.isReadable()) {
                 // and send the remainders too if necessary.
-                ChannelUtil.fireMessageReceived(
-                        ctx, e.getChannel(), cumulation.read(cumulation.length()));
+                fireMessageReceived(
+                        ctx, e.getChannel(), cumulation.readBytes(cumulation.readableBytes()));
             }
         }
         ctx.sendUpstream(e);

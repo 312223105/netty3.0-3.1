@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  *
  * @version $Rev$, $Date$
  *
- * @apiviz.hidden
+ * @apiviz.landmark
  */
 @Inherited
 @Documented

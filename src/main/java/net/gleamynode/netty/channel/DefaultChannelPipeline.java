@@ -33,21 +33,26 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     static final Logger logger = Logger.getLogger(DefaultChannelPipeline.class.getName());
 
     private final ChannelSink discardingSink = new ChannelSink() {
-        public void elementSunk(ChannelPipeline chain, ChannelEvent e) {
-            logger.warning("No sink is set; discarding: " + e);
+        public void eventSunk(ChannelPipeline pipeline, ChannelEvent e) {
+            logger.warning("Not attached yet; discarding: " + e);
         }
 
-        public void exceptionCaught(ChannelPipeline chain,
+        public void exceptionCaught(ChannelPipeline pipeline,
                 ChannelEvent e, ChannelPipelineException cause) throws Exception {
             throw cause;
         }
     };
 
-    volatile ChannelSink sink;
-    volatile DefaultChannelHandlerContext head;
+    private volatile Channel channel;
+    private volatile ChannelSink sink;
+    private volatile DefaultChannelHandlerContext head;
     private volatile DefaultChannelHandlerContext tail;
     private final Map<String, DefaultChannelHandlerContext> name2ctx =
         new HashMap<String, DefaultChannelHandlerContext>(4);
+
+    public Channel getChannel() {
+        return channel;
+    }
 
     public ChannelSink getSink() {
         ChannelSink sink = this.sink;
@@ -57,13 +62,17 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         return sink;
     }
 
-    public void setSink(ChannelSink sink) {
+    public void attach(Channel channel, ChannelSink sink) {
+        if (channel == null) {
+            throw new NullPointerException("channel");
+        }
         if (sink == null) {
             throw new NullPointerException("sink");
         }
-        if (this.sink != null) {
-            throw new IllegalStateException("sink is already set.");
+        if (this.channel != null || this.sink != null) {
+            throw new IllegalStateException("attached already");
         }
+        this.channel = channel;
         this.sink = sink;
     }
 
@@ -327,7 +336,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         DefaultChannelHandlerContext tail = getActualDownstreamContext(this.tail);
         if (tail == null) {
             try {
-                getSink().elementSunk(this, e);
+                getSink().eventSunk(this, e);
                 return;
             } catch (Throwable t) {
                 notifyException(e, t);
@@ -498,7 +507,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             this.handler = handler;
         }
 
-        public ChannelPipeline getChain() {
+        public ChannelPipeline getPipeline() {
             return DefaultChannelPipeline.this;
         }
 
@@ -522,7 +531,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             DefaultChannelHandlerContext prev = getActualDownstreamContext(this.prev);
             if (prev == null) {
                 try {
-                    getSink().elementSunk(DefaultChannelPipeline.this, e);
+                    getSink().eventSunk(DefaultChannelPipeline.this, e);
                 } catch (Throwable t) {
                     notifyException(e, t);
                 }

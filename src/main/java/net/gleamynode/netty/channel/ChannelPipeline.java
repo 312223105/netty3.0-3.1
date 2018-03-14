@@ -30,7 +30,7 @@ import java.util.Map;
  * @apiviz.landmark
  * @apiviz.composedOf net.gleamynode.netty.channel.ChannelHandlerContext
  * @apiviz.owns       net.gleamynode.netty.channel.ChannelHandler
- * @apiviz.uses       net.gleamynode.netty.channel.ChannelSink - - sends downstream events
+ * @apiviz.uses       net.gleamynode.netty.channel.ChannelSink - - sends events downstream
  */
 public interface ChannelPipeline {
     void addFirst (String name, ChannelHandler handler);
@@ -58,11 +58,12 @@ public interface ChannelPipeline {
     ChannelHandlerContext getContext(String name);
     ChannelHandlerContext getContext(Class<? extends ChannelHandler> handlerType);
 
-    void sendUpstream(ChannelEvent element);
-    void sendDownstream(ChannelEvent element);
+    void sendUpstream(ChannelEvent e);
+    void sendDownstream(ChannelEvent e);
 
+    Channel getChannel();
     ChannelSink getSink();
-    void setSink(ChannelSink sink);
+    void attach(Channel channel, ChannelSink sink);
 
     Map<String, ChannelHandler> toMap();
 }

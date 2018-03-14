@@ -17,6 +17,8 @@
  */
 package net.gleamynode.netty.bootstrap;
 
+import static net.gleamynode.netty.channel.Channels.*;
+
 import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,11 +31,11 @@ import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelException;
 import net.gleamynode.netty.channel.ChannelFactory;
 import net.gleamynode.netty.channel.ChannelFuture;
+import net.gleamynode.netty.channel.ChannelHandler;
 import net.gleamynode.netty.channel.ChannelHandlerContext;
 import net.gleamynode.netty.channel.ChannelPipeline;
 import net.gleamynode.netty.channel.ChannelPipelineCoverage;
 import net.gleamynode.netty.channel.ChannelStateEvent;
-import net.gleamynode.netty.channel.ChannelUtil;
 import net.gleamynode.netty.channel.ChildChannelStateEvent;
 import net.gleamynode.netty.channel.ExceptionEvent;
 import net.gleamynode.netty.channel.SimpleChannelHandler;
@@ -47,12 +49,22 @@ import net.gleamynode.netty.channel.SimpleChannelHandler;
  */
 public class ServerBootstrap extends Bootstrap {
 
+    private volatile ChannelHandler parentHandler;
+
     public ServerBootstrap() {
         super();
     }
 
     public ServerBootstrap(ChannelFactory channelFactory) {
         super(channelFactory);
+    }
+
+    public ChannelHandler getParentHandler() {
+        return parentHandler;
+    }
+
+    public void setParentHandler(ChannelHandler parentHandler) {
+        this.parentHandler = parentHandler;
     }
 
     public Channel bind() {
@@ -67,8 +79,13 @@ public class ServerBootstrap extends Bootstrap {
         final BlockingQueue<ChannelFuture> futureQueue =
             new LinkedBlockingQueue<ChannelFuture>();
 
-        ChannelPipeline bossPipeline = ChannelUtil.newPipeline();
+        ChannelPipeline bossPipeline = pipeline();
         bossPipeline.addLast("binder", new Binder(localAddress, futureQueue));
+
+        ChannelHandler parentHandler = getParentHandler();
+        if (parentHandler != null) {
+            bossPipeline.addLast("userHandler", parentHandler);
+        }
 
         Channel channel = getFactory().newChannel(bossPipeline);
 

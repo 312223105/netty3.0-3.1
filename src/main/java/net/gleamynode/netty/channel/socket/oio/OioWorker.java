@@ -17,14 +17,13 @@
  */
 package net.gleamynode.netty.channel.socket.oio;
 
-import static net.gleamynode.netty.channel.ChannelUtil.*;
+import static net.gleamynode.netty.channel.Channels.*;
 
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
 
-import net.gleamynode.netty.array.ByteArray;
-import net.gleamynode.netty.array.HeapByteArray;
-import net.gleamynode.netty.array.StaticPartialByteArray;
+import net.gleamynode.netty.buffer.ChannelBuffer;
+import net.gleamynode.netty.buffer.ChannelBuffers;
 import net.gleamynode.netty.channel.Channel;
 import net.gleamynode.netty.channel.ChannelFuture;
 
@@ -75,13 +74,13 @@ class OioWorker implements Runnable {
                 break;
             }
 
-            ByteArray array;
+            ChannelBuffer buffer;
             if (readBytes == buf.length) {
-                array = new HeapByteArray(buf);
+                buffer = ChannelBuffers.wrappedBuffer(buf);
             } else {
-                array = new StaticPartialByteArray(buf, 0, readBytes);
+                buffer = ChannelBuffers.wrappedBuffer(buf, 0, readBytes);
             }
-            fireMessageReceived(channel, array);
+            fireMessageReceived(channel, buffer);
         }
         close(channel, channel.getSucceededFuture());
     }
@@ -91,8 +90,9 @@ class OioWorker implements Runnable {
             Object message) {
         OutputStream out = channel.getOutputStream();
         try {
+            ChannelBuffer a = (ChannelBuffer) message;
             synchronized (out) {
-                ((ByteArray) message).copyTo(out);
+                a.getBytes(a.readerIndex(), out, a.readableBytes());
             }
             future.setSuccess();
         } catch (Throwable t) {

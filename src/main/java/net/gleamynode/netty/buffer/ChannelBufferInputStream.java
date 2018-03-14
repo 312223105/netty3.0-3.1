@@ -15,7 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
  */
-package net.gleamynode.netty.array;
+package net.gleamynode.netty.buffer;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -30,40 +30,39 @@ import java.io.InputStream;
  *
  * @version $Rev$, $Date$
  *
- * @see ByteArrayOutputStream
- * @see ByteArrayBufferInputStream
- * @apiviz.uses net.gleamynode.netty.array.ByteArray
+ * @see ChannelBufferOutputStream
+ * @apiviz.uses net.gleamynode.netty.buffer.ChannelBuffer
  */
-public class ByteArrayInputStream extends InputStream implements DataInput {
+public class ChannelBufferInputStream extends InputStream implements DataInput {
 
-    private final ByteArray array;
-    private final int length;
+    private final ChannelBuffer buffer;
+    private final int endIndex;
     private int offset;
     private Integer mark;
 
-    public ByteArrayInputStream(ByteArray array) {
-        this(array, array.firstIndex(), array.length());
+    public ChannelBufferInputStream(ChannelBuffer buffer) {
+        this(buffer, buffer.readerIndex(), buffer.readableBytes());
     }
 
-    public ByteArrayInputStream(ByteArray array, int startIndex, int length) {
-        if (array == null) {
-            throw new NullPointerException("array");
+    public ChannelBufferInputStream(ChannelBuffer buffer, int startIndex, int length) {
+        if (buffer == null) {
+            throw new NullPointerException("buffer");
         }
-        if (startIndex < array.firstIndex()) {
-            throw new ArrayIndexOutOfBoundsException();
+        if (startIndex < 0) {
+            throw new IndexOutOfBoundsException();
         }
-        if (length < 0 || startIndex + length > array.endIndex()) {
-            throw new ArrayIndexOutOfBoundsException();
+        if (length < 0 || startIndex + length > buffer.capacity()) {
+            throw new IndexOutOfBoundsException();
         }
 
-        this.array = array;
+        this.buffer = buffer;
         offset = startIndex;
-        this.length = length;
+        endIndex = startIndex + length;
     }
 
     @Override
     public int available() throws IOException {
-        return endOffset() - offset;
+        return endIndex - offset;
     }
 
     @Override
@@ -78,10 +77,10 @@ public class ByteArrayInputStream extends InputStream implements DataInput {
 
     @Override
     public int read() throws IOException {
-        if (offset >= endOffset()) {
+        if (offset >= endIndex) {
             return -1;
         }
-        return array.get8(offset ++) & 0xff;
+        return buffer.getByte(offset ++) & 0xff;
     }
 
     @Override
@@ -92,7 +91,7 @@ public class ByteArrayInputStream extends InputStream implements DataInput {
         }
 
         len = Math.min(available, len);
-        array.get(offset, b, off, len);
+        buffer.getBytes(offset, b, off, len);
         offset += len;
         return len;
     }
@@ -123,10 +122,10 @@ public class ByteArrayInputStream extends InputStream implements DataInput {
     }
 
     public byte readByte() throws IOException {
-        if (offset >= endOffset()) {
+        if (offset >= endIndex) {
             throw new EOFException();
         }
-        return array.get8(offset ++);
+        return buffer.getByte(offset ++);
     }
 
     public char readChar() throws IOException {
@@ -147,13 +146,13 @@ public class ByteArrayInputStream extends InputStream implements DataInput {
 
     public void readFully(byte[] b, int off, int len) throws IOException {
         checkIndex(len);
-        array.get(offset, b, off, len);
+        buffer.getBytes(offset, b, off, len);
         offset += len;
     }
 
     public int readInt() throws IOException {
         checkIndex(4);
-        int answer = array.getBE32(offset);
+        int answer = buffer.getInt(offset);
         offset += 4;
         return answer;
     }
@@ -180,14 +179,14 @@ public class ByteArrayInputStream extends InputStream implements DataInput {
 
     public long readLong() throws IOException {
         checkIndex(8);
-        long answer = array.getBE64(offset);
+        long answer = buffer.getLong(offset);
         offset += 8;
         return answer;
     }
 
     public short readShort() throws IOException {
         checkIndex(2);
-        short answer = array.getBE16(offset);
+        short answer = buffer.getShort(offset);
         offset += 2;
         return answer;
     }
@@ -210,12 +209,8 @@ public class ByteArrayInputStream extends InputStream implements DataInput {
         return nBytes;
     }
 
-    private int endOffset() {
-        return array.firstIndex() + length;
-    }
-
     private void checkIndex(int fieldSize) throws EOFException {
-        if (offset + fieldSize > endOffset()) {
+        if (offset + fieldSize > endIndex) {
             throw new EOFException();
         }
     }
