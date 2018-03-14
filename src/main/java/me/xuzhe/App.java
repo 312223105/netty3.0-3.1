@@ -1,10 +1,10 @@
 package me.xuzhe;
 
-import net.gleamynode.netty.bootstrap.ServerBootstrap;
-import net.gleamynode.netty.channel.ChannelFactory;
-import net.gleamynode.netty.channel.ChannelPipeline;
-import net.gleamynode.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import net.gleamynode.netty.handler.codec.string.StringDecoder;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.codec.string.StringDecoder;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
