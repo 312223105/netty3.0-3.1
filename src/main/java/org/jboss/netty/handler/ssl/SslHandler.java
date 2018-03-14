@@ -1,21 +1,28 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.handler.ssl;
+
+import static org.jboss.netty.channel.Channels.*;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
@@ -27,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLEngineResult.Status;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -43,13 +51,13 @@ import org.jboss.netty.handler.codec.frame.FrameDecoder;
 import org.jboss.netty.util.ImmediateExecutor;
 
 /**
- * @author The Netty Project (netty@googlegroups.com)
- * @author Trustin Lee (trustin@gmail.com)
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
  *
  * @version $Rev$, $Date$
  *
  * @apiviz.landmark
- * @apiviz.uses SslBufferPool
+ * @apiviz.uses org.jboss.netty.handler.ssl.SslBufferPool
  */
 public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler {
 
@@ -134,7 +142,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
             if (handshaking) {
                 return this.handshakeFuture;
             } else {
-                handshakeFuture = this.handshakeFuture = Channels.future(channel);
+                handshakeFuture = this.handshakeFuture = future(channel);
                 handshaking = true;
             }
         }
@@ -261,6 +269,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
         ChannelFuture future = null;
         ChannelBuffer msg;
         ByteBuffer outNetBuf = bufferPool.acquire();
+        boolean success = true;
         try {
             loop:
             for (;;) {
@@ -292,12 +301,12 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
                         if (pendingWrite.outAppBuf.hasRemaining()) {
                             // pendingWrite's future shouldn't be notified if
                             // only partial data is written.
-                            future = Channels.succeededFuture(channel);
+                            future = succeededFuture(channel);
                         } else {
                             future = pendingWrite.future;
                         }
 
-                        MessageEvent encryptedWrite = Channels.messageEvent(channel, future, msg);
+                        MessageEvent encryptedWrite = messageEvent(channel, future, msg);
                         if (Thread.holdsLock(pendingEncryptedWrites)) {
                             pendingEncryptedWrites.offer(encryptedWrite);
                         } else {
@@ -321,24 +330,47 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
                         case FINISHED:
                             setHandshakeSuccess();
                         default:
+                            if (result.getStatus() == Status.CLOSED) {
+                                success = false;
+                            }
                             break loop;
                         }
                     }
                 }
             }
         } catch (SSLException e) {
+            success = false;
             if (handshaking) {
                 setHandshakeFailure(e);
             }
             throw e;
         } finally {
             bufferPool.release(outNetBuf);
+
+            flushPendingEncryptedWrites(context);
+
+            if (!success) {
+                // Mark all remaining pending writes as failure if anything
+                // wrong happened before the write requests are wrapped.
+                // Please note that we don't call setFailure while a lock is
+                // acquired, to avoid a potential dead lock.
+                for (;;) {
+                    PendingWrite pendingWrite;
+                    synchronized (pendingUnencryptedWrites) {
+                        pendingWrite = pendingUnencryptedWrites.poll();
+                        if (pendingWrite == null) {
+                            break;
+                        }
+                    }
+
+                    pendingWrite.future.setFailure(
+                            new IllegalStateException("SSLEngine already closed"));
+                }
+            }
         }
 
-        flushPendingEncryptedWrites(context);
-
         if (future == null) {
-            future = Channels.succeededFuture(channel);
+            future = succeededFuture(channel);
         }
         return future;
     }
@@ -374,8 +406,8 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
                     msg.writeBytes(outNetBuf.array(), 0, msg.capacity());
                     outNetBuf.clear();
                     if (channel.isConnected()) {
-                        future = Channels.future(channel);
-                        Channels.write(ctx, channel, future, msg);
+                        future = future(channel);
+                        write(ctx, channel, future, msg);
                     }
                 }
 
@@ -402,7 +434,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
         }
 
         if (future == null) {
-            future = Channels.succeededFuture(channel);
+            future = succeededFuture(channel);
         }
         return future;
     }

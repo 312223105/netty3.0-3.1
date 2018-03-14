@@ -1,19 +1,24 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.buffer;
 
@@ -21,14 +26,17 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
+import java.nio.charset.UnsupportedCharsetException;
 
 /**
+ * Skeletal implementation for Java heap buffers.
  *
- * @author The Netty Project (netty@googlegroups.com)
- * @author Trustin Lee (trustin@gmail.com)
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
  *
  * @version $Rev$, $Date$
  */
@@ -64,10 +72,7 @@ public abstract class HeapChannelBuffer extends AbstractChannelBuffer {
         if (dst instanceof HeapChannelBuffer) {
             getBytes(index, ((HeapChannelBuffer) dst).array, dstIndex, length);
         } else {
-            final int srcEndIndex = index + length;
-            for (int i = index; i < srcEndIndex; i ++) {
-                dst.setByte(dstIndex ++, getByte(i));
-            }
+            dst.setBytes(dstIndex, array, index, length);
         }
     }
 
@@ -97,10 +102,7 @@ public abstract class HeapChannelBuffer extends AbstractChannelBuffer {
         if (src instanceof HeapChannelBuffer) {
             setBytes(index, ((HeapChannelBuffer) src).array, srcIndex, length);
         } else {
-            final int srcEndOffset = srcIndex + length;
-            for (int i = srcIndex; i < srcEndOffset; i ++) {
-                setByte(index++, src.getByte(i));
-            }
+            src.getBytes(srcIndex, array, index, length);
         }
     }
 
@@ -151,5 +153,13 @@ public abstract class HeapChannelBuffer extends AbstractChannelBuffer {
 
     public ByteBuffer toByteBuffer(int index, int length) {
         return ByteBuffer.wrap(array, index, length);
+    }
+
+    public String toString(int index, int length, String charsetName) {
+        try {
+            return new String(array, index, length, charsetName);
+        } catch (UnsupportedEncodingException e) {
+            throw new UnsupportedCharsetException(charsetName);
+        }
     }
 }

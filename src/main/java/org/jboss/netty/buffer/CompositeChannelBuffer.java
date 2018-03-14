@@ -1,36 +1,45 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.buffer;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
 
 
 /**
- * @author The Netty Project (netty@googlegroups.com)
- * @author Trustin Lee (trustin@gmail.com)
+ * Virtual buffer which shows multiple buffers as a single merged buffer.
+ *
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
  *
  * @version $Rev$, $Date$
  *
@@ -92,10 +101,10 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         }
     }
 
-    public int getMedium(int index) {
+    public int getUnsignedMedium(int index) {
         int sliceId = sliceId(index);
         if (index + 3 <= indices[sliceId + 1]) {
-            return slices[sliceId].getMedium(index - indices[sliceId]);
+            return slices[sliceId].getUnsignedMedium(index - indices[sliceId]);
         } else if (order() == ByteOrder.BIG_ENDIAN) {
             return (getShort(index) & 0xffff) << 8 | getByte(index + 2) & 0xff;
         } else {
@@ -413,6 +422,10 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
     }
 
     public ByteBuffer toByteBuffer(int index, int length) {
+        if (slices.length == 1) {
+            return slices[0].toByteBuffer(index, length);
+        }
+
         ByteBuffer[] buffers = toByteBuffers(index, length);
         ByteBuffer merged = ByteBuffer.allocate(length);
         for (ByteBuffer b: buffers) {
@@ -443,6 +456,35 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         }
 
         return buffers.toArray(new ByteBuffer[buffers.size()]);
+    }
+
+    public String toString(int index, int length, String charsetName) {
+        int sliceId = sliceId(index);
+        if (index + length <= indices[sliceId + 1]) {
+            return slices[sliceId].toString(
+                    index - indices[sliceId], length, charsetName);
+        }
+
+        byte[] data = new byte[length];
+        int dataIndex = 0;
+        int i = sliceId;
+
+        while (length > 0) {
+            ChannelBuffer s = slices[i];
+            int adjustment = indices[i];
+            int localLength = Math.min(length, s.capacity() - (index - adjustment));
+            s.getBytes(index - adjustment, data, dataIndex, localLength);
+            index += localLength;
+            dataIndex += localLength;
+            length -= localLength;
+            i ++;
+        }
+
+        try {
+            return new String(data, charsetName);
+        } catch (UnsupportedEncodingException e) {
+            throw new UnsupportedCharsetException(charsetName);
+        }
     }
 
     private int sliceId(int index) {

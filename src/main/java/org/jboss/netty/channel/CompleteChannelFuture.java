@@ -1,32 +1,53 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseimport java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-s of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * JBoss, Home of Professional Open Source
  *
- * This library is distributed in the hope that it will be useful,
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.channel;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+import org.jboss.netty.logging.InternalLogger;
+import org.jboss.netty.logging.InternalLoggerFactory;
+
+/**
+ * Skeletal {@link ChannelFuture} implementation which represents a future
+ * which is complete (done) already.
+ *
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
+ *
+ * @version $Rev$, $Date$
+ */
 public abstract class CompleteChannelFuture implements ChannelFuture {
 
-    private static final Logger logger = Logger.getLogger(CompleteChannelFuture.class.getName());
+    private static final InternalLogger logger =
+        InternalLoggerFactory.getInstance(CompleteChannelFuture.class);
 
     private final Channel channel;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param channel the {@link Channel} associated with this future
+     */
     protected CompleteChannelFuture(Channel channel) {
         if (channel == null) {
             throw new NullPointerException("channel");
@@ -38,11 +59,9 @@ public abstract class CompleteChannelFuture implements ChannelFuture {
         try {
             listener.operationComplete(this);
         } catch (Throwable t) {
-            logger.log(
-                    Level.WARNING,
+            logger.warn(
                     "An exception was thrown by " +
-                    ChannelFutureListener.class.getSimpleName() + ".",
-                    t);
+                    ChannelFutureListener.class.getSimpleName() + ".", t);
         }
     }
 

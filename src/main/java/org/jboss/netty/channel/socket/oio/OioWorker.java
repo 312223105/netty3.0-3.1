@@ -1,21 +1,28 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.channel.socket.oio;
+
+import static org.jboss.netty.channel.Channels.*;
 
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
@@ -24,7 +31,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.Channels;
 
 class OioWorker implements Runnable {
 
@@ -68,7 +74,7 @@ class OioWorker implements Runnable {
                 }
             } catch (Throwable t) {
                 if (!channel.socket.isClosed()) {
-                    Channels.fireExceptionCaught(channel, t);
+                    fireExceptionCaught(channel, t);
                 }
                 break;
             }
@@ -79,7 +85,7 @@ class OioWorker implements Runnable {
             } else {
                 buffer = ChannelBuffers.wrappedBuffer(buf, 0, readBytes);
             }
-            Channels.fireMessageReceived(channel, buffer);
+            fireMessageReceived(channel, buffer);
         }
         close(channel, channel.getSucceededFuture());
     }
@@ -96,7 +102,7 @@ class OioWorker implements Runnable {
             future.setSuccess();
         } catch (Throwable t) {
             future.setFailure(t);
-            Channels.fireExceptionCaught(channel, t);
+            fireExceptionCaught(channel, t);
         }
     }
 
@@ -124,11 +130,11 @@ class OioWorker implements Runnable {
                 }
 
                 channel.setInterestOpsNow(interestOps);
-                Channels.fireChannelInterestChanged(channel, interestOps);
+                fireChannelInterestChanged(channel, interestOps);
             }
         } catch (Throwable t) {
             future.setFailure(t);
-            Channels.fireExceptionCaught(channel, t);
+            fireExceptionCaught(channel, t);
         }
     }
 
@@ -142,18 +148,18 @@ class OioWorker implements Runnable {
                 if (connected) {
                     if (channel.getInterestOps() != Channel.OP_WRITE) {
                         channel.setInterestOpsNow(Channel.OP_WRITE);
-                        Channels.fireChannelInterestChanged(channel, Channel.OP_WRITE);
+                        fireChannelInterestChanged(channel, Channel.OP_WRITE);
                     }
-                    Channels.fireChannelDisconnected(channel);
+                    fireChannelDisconnected(channel);
                 }
                 if (bound) {
-                    Channels.fireChannelUnbound(channel);
+                    fireChannelUnbound(channel);
                 }
-                Channels.fireChannelClosed(channel);
+                fireChannelClosed(channel);
             }
         } catch (Throwable t) {
             future.setFailure(t);
-            Channels.fireExceptionCaught(channel, t);
+            fireExceptionCaught(channel, t);
         }
     }
 }

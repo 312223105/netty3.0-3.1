@@ -1,21 +1,28 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.channel.socket.nio;
+
+import static org.jboss.netty.channel.Channels.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -24,8 +31,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.jboss.netty.channel.AbstractChannelSink;
 import org.jboss.netty.channel.Channel;
@@ -35,13 +40,14 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.logging.InternalLogger;
+import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.util.NamePreservingRunnable;
-import org.jboss.netty.channel.Channels;
 
 class NioServerSocketPipelineSink extends AbstractChannelSink {
 
-    static final Logger logger =
-        Logger.getLogger(NioServerSocketPipelineSink.class.getName());
+    static final InternalLogger logger =
+        InternalLoggerFactory.getInstance(NioServerSocketPipelineSink.class);
     private static final AtomicInteger nextId = new AtomicInteger();
 
     private final int id = nextId.incrementAndGet();
@@ -136,7 +142,7 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
             bound = true;
 
             future.setSuccess();
-            Channels.fireChannelBound(channel, channel.getLocalAddress());
+            fireChannelBound(channel, channel.getLocalAddress());
 
             Executor bossExecutor =
                 ((NioServerSocketChannelFactory) channel.getFactory()).bossExecutor;
@@ -147,7 +153,7 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
             bossStarted = true;
         } catch (Throwable t) {
             future.setFailure(t);
-            Channels.fireExceptionCaught(channel, t);
+            fireExceptionCaught(channel, t);
         } finally {
             if (!bossStarted && bound) {
                 close(channel, future);
@@ -162,13 +168,13 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
             future.setSuccess();
             if (channel.setClosed()) {
                 if (bound) {
-                    Channels.fireChannelUnbound(channel);
+                    fireChannelUnbound(channel);
                 }
-                Channels.fireChannelClosed(channel);
+                fireChannelClosed(channel);
             }
         } catch (Throwable t) {
             future.setFailure(t);
-            Channels.fireExceptionCaught(channel, t);
+            fireExceptionCaught(channel, t);
         }
     }
 
@@ -197,15 +203,12 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
                                         NioServerSocketPipelineSink.this,
                                         acceptedSocket, worker), null);
                     } catch (Exception e) {
-                        logger.log(
-                                Level.WARNING,
-                                "Failed to initialize an accepted socket.",
-                                e);
+                        logger.warn(
+                                "Failed to initialize an accepted socket.", e);
                         try {
                             acceptedSocket.close();
                         } catch (IOException e2) {
-                            logger.log(
-                                    Level.WARNING,
+                            logger.warn(
                                     "Failed to close a partially accepted socket.",
                                     e2);
                         }
@@ -217,8 +220,7 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
                     // Closed as requested.
                     break;
                 } catch (IOException e) {
-                    logger.log(
-                            Level.WARNING,
+                    logger.warn(
                             "Failed to accept a connection.", e);
                     try {
                         Thread.sleep(1000);

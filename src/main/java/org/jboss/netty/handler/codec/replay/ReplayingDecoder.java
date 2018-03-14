@@ -1,26 +1,32 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.handler.codec.replay;
+
+import static org.jboss.netty.channel.Channels.*;
 
 import java.net.SocketAddress;
 
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
@@ -31,17 +37,27 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 
 /**
- * @author The Netty Project (netty@googlegroups.com)
- * @author Trustin Lee (trustin@gmail.com)
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
  *
  * @version $Rev$, $Date$
  *
  */
 @ChannelPipelineCoverage("one")
-public abstract class ReplayingDecoder extends SimpleChannelHandler {
+public abstract class ReplayingDecoder<T extends Enum<T>> extends SimpleChannelHandler {
 
-    private final ChannelBuffer cumulation = ChannelBuffers.dynamicBuffer();
+    private final ChannelBuffer cumulation = new UnsafeDynamicChannelBuffer(256);
     private final ReplayingDecoderBuffer replayable = new ReplayingDecoderBuffer(cumulation);
+    private volatile T state;
+    private volatile int checkpoint;
+
+    protected ReplayingDecoder() {
+        this(null);
+    }
+
+    protected ReplayingDecoder(T initialState) {
+        this.state = initialState;
+    }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
@@ -83,10 +99,10 @@ public abstract class ReplayingDecoder extends SimpleChannelHandler {
 
     private void callDecode(ChannelHandlerContext context, Channel channel, SocketAddress remoteAddress) throws Exception {
         while (cumulation.readable()) {
-            int oldReaderIndex = cumulation.readerIndex();
+            int oldReaderIndex = checkpoint = cumulation.readerIndex();
             Object result = null;
             try {
-                result = decode(context, channel, replayable);
+                result = decode(context, channel, replayable, state);
                 if (result == null) {
                     if (oldReaderIndex == cumulation.readerIndex()) {
                         throw new IllegalStateException(
@@ -97,9 +113,9 @@ public abstract class ReplayingDecoder extends SimpleChannelHandler {
                         continue;
                     }
                 }
-            } catch (ReplayError rewind) {
-                // Rewound
-                cumulation.readerIndex(oldReaderIndex);
+            } catch (ReplayError replay) {
+                // Return to the checkpoint (or oldPosition) and retry.
+                cumulation.readerIndex(checkpoint);
             }
 
             if (result == null) {
@@ -113,6 +129,8 @@ public abstract class ReplayingDecoder extends SimpleChannelHandler {
                         "decode() method must consume at least one byte "
                                 + "if it returned a decoded message.");
             }
+
+            // A successful decode
             Channels.fireMessageReceived(context, channel, result, remoteAddress);
         }
     }
@@ -125,22 +143,33 @@ public abstract class ReplayingDecoder extends SimpleChannelHandler {
                 callDecode(ctx, e.getChannel(), null);
                 if (cumulation.readable()) {
                     // and send the remainders too if necessary.
-                    Object partiallyDecoded = decodeLast(ctx, e.getChannel(), cumulation);
+                    Object partiallyDecoded = decodeLast(ctx, e.getChannel(), cumulation, state);
                     if (partiallyDecoded != null) {
-                        Channels.fireMessageReceived(ctx, e.getChannel(), partiallyDecoded, null);
+                        fireMessageReceived(ctx, e.getChannel(), partiallyDecoded, null);
                     }
                 }
             }
+        } catch (ReplayError replay) {
+            // Ignore
         } finally {
             ctx.sendUpstream(e);
         }
     }
 
+    protected void checkpoint() {
+        checkpoint = cumulation.readerIndex();
+    }
+
+    protected void checkpoint(T state) {
+        this.state = state;
+        checkpoint = cumulation.readerIndex();
+    }
+
     protected abstract Object decode(ChannelHandlerContext ctx,
-            Channel channel, ChannelBuffer buffer) throws Exception;
+            Channel channel, ChannelBuffer buffer, T state) throws Exception;
 
     protected Object decodeLast(
-            ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
-        return decode(ctx, channel, buffer);
+            ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, T state) throws Exception {
+        return decode(ctx, channel, buffer, state);
     }
 }

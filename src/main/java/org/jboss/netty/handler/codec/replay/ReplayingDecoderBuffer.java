@@ -1,19 +1,24 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.handler.codec.replay;
 
@@ -29,8 +34,8 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferIndexFinder;
 
 /**
- * @author The Netty Project (netty@googlegroups.com)
- * @author Trustin Lee (trustin@gmail.com)
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
  *
  * @version $Rev$, $Date$
  *
@@ -38,7 +43,6 @@ import org.jboss.netty.buffer.ChannelBufferIndexFinder;
 class ReplayingDecoderBuffer implements ChannelBuffer {
 
     private static final Error REPLAY = new ReplayError();
-
 
     private final ChannelBuffer buffer;
 
@@ -89,6 +93,11 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         return buffer.getByte(index);
     }
 
+    public short getUnsignedByte(int index) {
+        checkIndex(index);
+        return buffer.getUnsignedByte(index);
+    }
+
     public void getBytes(int index, byte[] dst, int dstIndex, int length) {
         checkIndex(index, length);
         buffer.getBytes(index, dst, dstIndex, length);
@@ -100,8 +109,7 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
     }
 
     public void getBytes(int index, ByteBuffer dst) {
-        checkIndex(index, dst.remaining());
-        buffer.getBytes(index, dst);
+        reject();
     }
 
     public void getBytes(int index, ChannelBuffer dst, int dstIndex, int length) {
@@ -109,9 +117,12 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         buffer.getBytes(index, dst, dstIndex, length);
     }
 
+    public void getBytes(int index, ChannelBuffer dst, int length) {
+        reject();
+    }
+
     public void getBytes(int index, ChannelBuffer dst) {
-        checkIndex(index, dst.writableBytes());
-        buffer.getBytes(index, dst);
+        reject();
     }
 
     public int getBytes(int index, GatheringByteChannel out, int length)
@@ -126,8 +137,13 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
     }
 
     public int getInt(int index) {
-        checkIndex(index);
+        checkIndex(index, 4);
         return buffer.getInt(index);
+    }
+
+    public long getUnsignedInt(int index) {
+        checkIndex(index, 4);
+        return buffer.getUnsignedInt(index);
     }
 
     public long getLong(int index) {
@@ -140,9 +156,19 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         return buffer.getMedium(index);
     }
 
+    public int getUnsignedMedium(int index) {
+        checkIndex(index, 3);
+        return buffer.getUnsignedMedium(index);
+    }
+
     public short getShort(int index) {
         checkIndex(index, 2);
         return buffer.getShort(index);
+    }
+
+    public int getUnsignedShort(int index) {
+        checkIndex(index, 2);
+        return buffer.getUnsignedShort(index);
     }
 
     @Override
@@ -193,9 +219,9 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         return buffer.readByte();
     }
 
-    public ChannelBuffer readBytes() {
-        reject();
-        return null;
+    public short readUnsignedByte() {
+        checkReadableBytes(1);
+        return buffer.readUnsignedByte();
     }
 
     public void readBytes(byte[] dst, int dstIndex, int length) {
@@ -209,8 +235,7 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
     }
 
     public void readBytes(ByteBuffer dst) {
-        checkReadableBytes(dst.remaining());
-        buffer.readBytes(dst);
+        reject();
     }
 
     public void readBytes(ChannelBuffer dst, int dstIndex, int length) {
@@ -219,13 +244,11 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
     }
 
     public void readBytes(ChannelBuffer dst, int length) {
-        checkReadableBytes(length);
-        buffer.readBytes(dst, length);
+        reject();
     }
 
     public void readBytes(ChannelBuffer dst) {
-        checkReadableBytes(dst.writableBytes());
-        buffer.readBytes(dst);
+        reject();
     }
 
     public ChannelBuffer readBytes(ChannelBufferIndexFinder endIndexFinder) {
@@ -247,6 +270,20 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         return buffer.readBytes(length);
     }
 
+    public ChannelBuffer readSlice(
+            ChannelBufferIndexFinder endIndexFinder) {
+        int endIndex = buffer.indexOf(buffer.readerIndex(), buffer.writerIndex(), endIndexFinder);
+        if (endIndex < 0) {
+            throw REPLAY;
+        }
+        return readSlice(endIndex);
+    }
+
+    public ChannelBuffer readSlice(int length) {
+        checkReadableBytes(length);
+        return buffer.readSlice(length);
+    }
+
     public void readBytes(OutputStream out, int length) throws IOException {
         reject();
     }
@@ -264,6 +301,11 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         return buffer.readInt();
     }
 
+    public long readUnsignedInt() {
+        checkReadableBytes(4);
+        return buffer.readUnsignedInt();
+    }
+
     public long readLong() {
         checkReadableBytes(8);
         return buffer.readLong();
@@ -274,9 +316,19 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         return buffer.readMedium();
     }
 
+    public int readUnsignedMedium() {
+        checkReadableBytes(3);
+        return buffer.readUnsignedMedium();
+    }
+
     public short readShort() {
         checkReadableBytes(2);
         return buffer.readShort();
+    }
+
+    public int readUnsignedShort() {
+        checkReadableBytes(2);
+        return buffer.readUnsignedShort();
     }
 
     public void resetReaderIndex() {
@@ -307,12 +359,20 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         reject();
     }
 
+    public void setBytes(int index, ChannelBuffer src, int length) {
+        reject();
+    }
+
     public void setBytes(int index, ChannelBuffer src) {
         reject();
     }
 
     public void setBytes(int index, InputStream in, int length)
             throws IOException {
+        reject();
+    }
+
+    public void setZero(int index, int length) {
         reject();
     }
 
@@ -386,6 +446,29 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         return buffer.toByteBuffers(index, length);
     }
 
+    public String toString(int index, int length, String charsetName) {
+        checkIndex(index, length);
+        return buffer.toString(index, length, charsetName);
+    }
+
+    public String toString(
+            int index, int length, String charsetName,
+            ChannelBufferIndexFinder terminatorFinder) {
+        checkIndex(index, length);
+        return buffer.toString(index, length, charsetName, terminatorFinder);
+    }
+
+    public String toString(String charsetName) {
+        reject();
+        return null;
+    }
+
+    public String toString(
+            String charsetName, ChannelBufferIndexFinder terminatorFinder) {
+        reject();
+        return null;
+    }
+
     @Override
     public String toString() {
         return buffer.toString();
@@ -449,7 +532,7 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
         reject();
     }
 
-    public void writePlaceholder(int length) {
+    public void writeZero(int length) {
         reject();
     }
 
@@ -466,13 +549,13 @@ class ReplayingDecoderBuffer implements ChannelBuffer {
     }
 
     private void checkIndex(int index) {
-        if (index > buffer.readerIndex() + buffer.readableBytes()) {
+        if (index > buffer.writerIndex()) {
             throw REPLAY;
         }
     }
 
     private void checkIndex(int index, int length) {
-        if (index + length > buffer.readerIndex() + buffer.readableBytes()) {
+        if (index + length > buffer.writerIndex()) {
             throw REPLAY;
         }
     }

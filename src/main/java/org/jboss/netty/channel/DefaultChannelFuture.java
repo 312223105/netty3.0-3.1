@@ -1,32 +1,47 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.channel;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+import org.jboss.netty.logging.InternalLogger;
+import org.jboss.netty.logging.InternalLoggerFactory;
 
+/**
+ * The default {@link ChannelFuture} implementation.
+ *
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
+ *
+ * @version $Rev$, $Date$
+ */
 public class DefaultChannelFuture implements ChannelFuture {
 
-    private static final Logger logger = Logger.getLogger(DefaultChannelFuture.class.getName());
+    private static final InternalLogger logger =
+        InternalLoggerFactory.getInstance(DefaultChannelFuture.class);
+
     private static final int DEAD_LOCK_CHECK_INTERVAL = 5000;
     private static final Throwable CANCELLED = new Throwable();
 
@@ -39,6 +54,14 @@ public class DefaultChannelFuture implements ChannelFuture {
     private Throwable cause;
     private int waiters;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param channel
+     *        the {@link Channel} associated with this future
+     * @param cancellable
+     *        {@code true} if and only if this future can be canceled
+     */
     public DefaultChannelFuture(Channel channel, boolean cancellable) {
         this.channel = channel;
         this.cancellable = cancellable;
@@ -317,11 +340,9 @@ public class DefaultChannelFuture implements ChannelFuture {
         try {
             l.operationComplete(this);
         } catch (Throwable t) {
-            logger.log(
-                    Level.WARNING,
+            logger.warn(
                     "An exception was thrown by " +
-                    ChannelFutureListener.class.getSimpleName() + ".",
-                    t);
+                    ChannelFutureListener.class.getSimpleName() + ".", t);
         }
     }
 }

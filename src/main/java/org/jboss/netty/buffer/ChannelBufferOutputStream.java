@@ -1,19 +1,24 @@
 /*
- * Copyright (C) 2008  Trustin Heuiseung Lee
+ * JBoss, Home of Professional Open Source
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Copyright 2008, Red Hat Middleware LLC, and individual contributors
+ * by the @author tags. See the COPYRIGHT.txt in the distribution for a
+ * full listing of individual contributors.
  *
- * This library is distributed in the hope that it will be useful,
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, 5th Floor, Boston, MA 02110-1301 USA
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.netty.buffer;
 
@@ -23,20 +28,32 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
+ * {@link OutputStream} which writes data to a {@link ChannelBuffer}.
+ * <p>
+ * A write operation against this stream will occur at the {@code writerIndex}
+ * of its underlying buffer and the {@code writerIndex} will increase during
+ * the write operation.
+ * <p>
+ * This stream implements {@link DataOutput} for your convenience.
+ * The endianness of the stream is not always big endian but depends on
+ * the endianness of the underlying buffer.
  *
- * @author The Netty Project (netty@googlegroups.com)
- * @author Trustin Lee (trustin@gmail.com)
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
  *
  * @version $Rev$, $Date$
  *
  * @see ChannelBufferInputStream
- * @apiviz.uses ChannelBuffer
+ * @apiviz.uses org.jboss.netty.buffer.ChannelBuffer
  */
 public class ChannelBufferOutputStream extends OutputStream implements DataOutput {
 
     private final ChannelBuffer buffer;
     private final DataOutputStream utf8out = new DataOutputStream(this);
 
+    /**
+     * Creates a new stream which writes data to the specified {@code buffer}.
+     */
     public ChannelBufferOutputStream(ChannelBuffer buffer) {
         if (buffer == null) {
             throw new NullPointerException("buffer");
@@ -113,6 +130,9 @@ public class ChannelBufferOutputStream extends OutputStream implements DataOutpu
         utf8out.writeUTF(s);
     }
 
+    /**
+     * Returns the buffer where this stream is writing data.
+     */
     public ChannelBuffer buffer() {
         return buffer;
     }
