@@ -22,8 +22,19 @@
  */
 package org.jboss.netty.channel;
 
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+
 
 /**
+ * The main interface to a transport that creates a {@link Channel} associated
+ * with a certain communication entity such as a network socket.  For example,
+ * the {@link NioServerSocketChannelFactory} creates a channel which has a
+ * NIO-based server socket as its underlying communication entity.
+ * <p>
+ * Once a new {@link Channel} is created, the {@link ChannelPipeline} which
+ * was specified as a parameter in the {@link #newChannel(ChannelPipeline)}
+ * is attached to the new {@link Channel}, and starts to handle all associated
+ * {@link ChannelEvent}s.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)
@@ -34,5 +45,17 @@ package org.jboss.netty.channel;
  * @apiviz.has        org.jboss.netty.channel.Channel oneway - - creates
  */
 public interface ChannelFactory {
+
+    /**
+     * Creates and opens a new {@link Channel} and attaches the specified
+     * {@link ChannelPipeline} to the new {@link Channel}.
+     *
+     * @param pipeline the {@link ChannelPipeline} which is going to be
+     *                 attached to the new {@link Channel}
+     *
+     * @return the newly open channel
+     *
+     * @throws ChannelException if failed to create and open a new channel
+     */
     Channel newChannel(ChannelPipeline pipeline);
 }

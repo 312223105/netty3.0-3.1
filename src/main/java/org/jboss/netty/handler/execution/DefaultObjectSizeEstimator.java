@@ -33,11 +33,23 @@ import java.util.concurrent.ConcurrentMap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.MessageEvent;
 
+/**
+ * The default {@link ObjectSizeEstimator} implementation for general purpose.
+ *
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
 public class DefaultObjectSizeEstimator implements ObjectSizeEstimator {
 
     private final ConcurrentMap<Class<?>, Integer> class2size =
         new ConcurrentHashMap<Class<?>, Integer>();
 
+    /**
+     * Creates a new instance.
+     */
     public DefaultObjectSizeEstimator() {
         class2size.put(boolean.class, 4); // Probably an integer.
         class2size.put(byte.class, 1);

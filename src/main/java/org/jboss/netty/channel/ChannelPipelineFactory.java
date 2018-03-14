@@ -23,6 +23,11 @@
 package org.jboss.netty.channel;
 
 /**
+ * Creates a new {@link ChannelPipeline} for a new {@link Channel}.
+ * <p>
+ * This interface was introduced to initialize the {@link ChannelPipeline} of
+ * the child channel accepted by a server-side, but it's safe to use it for
+ * any other purposes.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)
@@ -32,5 +37,9 @@ package org.jboss.netty.channel;
  * @apiviz.has org.jboss.netty.channel.ChannelPipeline oneway - - creates
  */
 public interface ChannelPipelineFactory {
+
+    /**
+     * Returns a newly created {@link ChannelPipeline}.
+     */
     ChannelPipeline getPipeline() throws Exception;
 }

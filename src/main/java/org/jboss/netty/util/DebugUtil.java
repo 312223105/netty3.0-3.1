@@ -41,7 +41,7 @@ public class DebugUtil {
     public static boolean isDebugEnabled() {
         String value;
         try {
-            value = System.getProperty("org.jboss.netty.debug");
+            value = SystemPropertyUtil.get("org.jboss.netty.debug");
         } catch (Exception e) {
             value = null;
         }

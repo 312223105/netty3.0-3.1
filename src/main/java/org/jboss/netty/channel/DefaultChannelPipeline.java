@@ -33,7 +33,17 @@ import java.util.NoSuchElementException;
 import org.jboss.netty.logging.InternalLogger;
 import org.jboss.netty.logging.InternalLoggerFactory;
 
-
+/**
+ * The default {@link ChannelPipeline} implementation.  It is recommended
+ * to use {@link Channels#pipeline()} to create a new {@link ChannelPipeline}
+ * instance rather than calling the constructor directly.
+ *
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
 public class DefaultChannelPipeline implements ChannelPipeline {
 
     static final InternalLogger logger = InternalLoggerFactory.getInstance(DefaultChannelPipeline.class);
@@ -55,6 +65,13 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private volatile DefaultChannelHandlerContext tail;
     private final Map<String, DefaultChannelHandlerContext> name2ctx =
         new HashMap<String, DefaultChannelHandlerContext>(4);
+
+    /**
+     * Creates a new empty pipeline.
+     */
+    public DefaultChannelPipeline() {
+        super();
+    }
 
     public Channel getChannel() {
         return channel;
@@ -341,6 +358,31 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             }
         }
         return map;
+    }
+
+    /**
+     * Returns the {@link String} representation of this pipeline.
+     */
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder();
+        buf.append(getClass().getSimpleName());
+        buf.append('{');
+        DefaultChannelHandlerContext ctx = head;
+        for (;;) {
+            buf.append('(');
+            buf.append(ctx.getName());
+            buf.append(" = ");
+            buf.append(ctx.getHandler().getClass().getName());
+            buf.append(')');
+            ctx = ctx.next;
+            if (ctx == null) {
+                break;
+            }
+            buf.append(", ");
+        }
+        buf.append('}');
+        return buf.toString();
     }
 
     public void sendUpstream(ChannelEvent e) {

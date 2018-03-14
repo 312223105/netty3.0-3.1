@@ -22,6 +22,22 @@
  */
 package org.jboss.netty.handler.execution;
 
+/**
+ * Estimates the size of an object in byte unit.
+ *
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
 public interface ObjectSizeEstimator {
+
+    /**
+     * Returns the estimated size of the specified object in byte unit.
+     * This method must be implemented to return the same value for the same
+     * object.  {@link MemoryAwareThreadPoolExecutor} and
+     * {@link OrderedMemoryAwareThreadPoolExecutor} will malfunction otherwise.
+     */
     int estimateSize(Object o);
 }

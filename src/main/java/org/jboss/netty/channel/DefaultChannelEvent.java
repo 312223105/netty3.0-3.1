@@ -22,11 +22,23 @@
  */
 package org.jboss.netty.channel;
 
+/**
+ * The default {@link ChannelEvent} implementation.
+ *
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
 public class DefaultChannelEvent implements ChannelEvent {
 
     private final Channel channel;
     private final ChannelFuture future;
 
+    /**
+     * Creates a new instance.
+     */
     public DefaultChannelEvent(Channel channel, ChannelFuture future) {
         if (channel == null) {
             throw new NullPointerException("channel");
@@ -46,6 +58,9 @@ public class DefaultChannelEvent implements ChannelEvent {
         return future;
     }
 
+    /**
+     * Returns the {@link String} representation of this event.
+     */
     @Override
     public String toString() {
         return channel.toString();

@@ -31,7 +31,9 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
 /**
- * Derived buffer which forbids any write requests to its parent.
+ * A derived buffer which forbids any write requests to its parent.  It is
+ * recommended to use {@link ChannelBuffers#unmodifiableBuffer(ChannelBuffer)}
+ * instead of calling the constructor explicitly.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)
@@ -144,7 +146,7 @@ public class ReadOnlyChannelBuffer extends AbstractChannelBuffer implements Wrap
     }
 
     public ChannelBuffer copy(int index, int length) {
-        return new ReadOnlyChannelBuffer(buffer.copy(index, length));
+        return buffer.copy(index, length);
     }
 
     public ChannelBuffer slice(int index, int length) {
@@ -173,6 +175,15 @@ public class ReadOnlyChannelBuffer extends AbstractChannelBuffer implements Wrap
 
     public ByteBuffer toByteBuffer(int index, int length) {
         return buffer.toByteBuffer(index, length).asReadOnlyBuffer();
+    }
+
+    @Override
+    public ByteBuffer[] toByteBuffers(int index, int length) {
+        ByteBuffer[] bufs = buffer.toByteBuffers(index, length);
+        for (int i = 0; i < bufs.length; i ++) {
+            bufs[i] = bufs[i].asReadOnlyBuffer();
+        }
+        return bufs;
     }
 
     public String toString(int index, int length, String charsetName) {

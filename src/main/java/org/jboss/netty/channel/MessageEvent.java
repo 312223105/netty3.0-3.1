@@ -25,6 +25,12 @@ package org.jboss.netty.channel;
 import java.net.SocketAddress;
 
 /**
+ * A {@link ChannelEvent} which represents the transmission or reception of a
+ * message.  It can mean the notification of a received message or the request
+ * for writing a message, depending on whether it is a upstream event or a
+ * downstream event respectively.  Please refer to the {@link ChannelEvent}
+ * documentation to find out what a upstream event and a downstream event are
+ * and what fundamental differences they have.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)
@@ -32,6 +38,17 @@ import java.net.SocketAddress;
  * @version $Rev$, $Date$
  */
 public interface MessageEvent extends ChannelEvent {
+
+    /**
+     * Returns the message.
+     */
     Object getMessage();
+
+    /**
+     * Returns the remote address.
+     *
+     * @return the remote address.  {@code null} if the remote address is
+     *         same with the default remote address returned by {@link Channel#getRemoteAddress()}.
+     */
     SocketAddress getRemoteAddress();
 }

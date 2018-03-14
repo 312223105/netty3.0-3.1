@@ -22,12 +22,24 @@
  */
 package org.jboss.netty.channel;
 
+/**
+ * The default {@link ChannelStateEvent} implementation.
+ *
+ * @author The Netty Project (netty-dev@lists.jboss.org)
+ * @author Trustin Lee (tlee@redhat.com)
+ *
+ * @version $Rev$, $Date$
+ *
+ */
 public class DefaultChannelStateEvent extends DefaultChannelEvent implements
         ChannelStateEvent {
 
     private final ChannelState state;
     private final Object value;
 
+    /**
+     * Creates a new instance.
+     */
     public DefaultChannelStateEvent(
             Channel channel, ChannelFuture future,
             ChannelState state, Object value) {

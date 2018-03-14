@@ -20,38 +20,53 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.netty.channel;
-
-import java.util.EventListener;
+package org.jboss.netty.util;
 
 /**
- * Listens to the result of a {@link ChannelFuture}.  The result of the
- * asynchronous {@link Channel} I/O operation is notified once this listener
- * is added by calling {@link ChannelFuture#addListener(ChannelFutureListener)}.
+ * Accesses the system property swallowing a {@link SecurityException}.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)
  *
  * @version $Rev$, $Date$
+ *
  */
-public interface ChannelFutureListener extends EventListener {
+public class SystemPropertyUtil {
 
     /**
-     * An {@link ChannelFutureListener} that closes the {@link Channel} which is
-     * associated with the specified {@link ChannelFuture}.
-     */
-    static ChannelFutureListener CLOSE = new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture future) {
-            future.getChannel().close();
-        }
-    };
-
-    /**
-     * Invoked when the I/O operation associated with the {@link ChannelFuture}
-     * has been completed.
+     * Returns the value of the Java system property with the specified
+     * {@code key}.
      *
-     * @param future  The source {@link ChannelFuture} which called this
-     *                callback.
+     * @return the property value.
+     *         {@code null} if there's no such property or if an access to the
+     *         specified property is not allowed.
      */
-    void operationComplete(ChannelFuture future) throws Exception;
+    public static String get(String key) {
+        try {
+            return System.getProperty(key);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the value of the Java system property with the specified
+     * {@code key}, while falling back to the specified default value if
+     * the property access fails.
+     *
+     * @return the property value.
+     *         {@code def} if there's no such property or if an access to the
+     *         specified property is not allowed.
+     */
+    public static String get(String key, String def) {
+        String value = get(key);
+        if (value == null) {
+            value = def;
+        }
+        return value;
+    }
+
+    private SystemPropertyUtil() {
+        // Unused
+    }
 }
