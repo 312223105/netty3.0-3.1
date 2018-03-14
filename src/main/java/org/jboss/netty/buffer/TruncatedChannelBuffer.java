@@ -93,7 +93,9 @@ public class TruncatedChannelBuffer extends AbstractChannelBuffer implements Wra
     }
 
     public ChannelBuffer duplicate() {
-        return new TruncatedChannelBuffer(buffer, length);
+        ChannelBuffer duplicate = new TruncatedChannelBuffer(buffer, length);
+        duplicate.setIndex(readerIndex(), writerIndex());
+        return duplicate;
     }
 
     public ChannelBuffer copy(int index, int length) {
@@ -102,6 +104,9 @@ public class TruncatedChannelBuffer extends AbstractChannelBuffer implements Wra
 
     public ChannelBuffer slice(int index, int length) {
         checkIndex(index, length);
+        if (length == 0) {
+            return ChannelBuffers.EMPTY_BUFFER;
+        }
         return buffer.slice(index, length);
     }
 

@@ -75,6 +75,9 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
         if (buffer == null) {
             throw new NullPointerException("buffer");
         }
+        if (length < 0) {
+            throw new IllegalArgumentException("length: " + length);
+        }
         if (length > buffer.readableBytes()) {
             throw new IndexOutOfBoundsException();
         }
@@ -142,11 +145,8 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
     }
 
     public boolean readBoolean() throws IOException {
-        int b = read();
-        if (b < 0) {
-            throw new EOFException();
-        }
-        return b != 0;
+        checkAvailable(1);
+        return read() != 0;
     }
 
     public byte readByte() throws IOException {
@@ -226,13 +226,13 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
 
     public int skipBytes(int n) throws IOException {
         int nBytes = Math.min(available(), n);
-        buffer.skipBytes(n);
+        buffer.skipBytes(nBytes);
         return nBytes;
     }
 
     private void checkAvailable(int fieldSize) throws IOException {
         if (fieldSize < 0) {
-            throw new IllegalArgumentException();
+            throw new IndexOutOfBoundsException();
         }
         if (fieldSize > available()) {
             throw new EOFException();

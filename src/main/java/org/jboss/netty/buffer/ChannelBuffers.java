@@ -129,12 +129,15 @@ public class ChannelBuffers {
      * {@code writerIndex} are {@code 0}.
      */
     public static ChannelBuffer buffer(ByteOrder endianness, int capacity) {
-        if (capacity == 0) {
-            return EMPTY_BUFFER;
-        }
         if (endianness == BIG_ENDIAN) {
+            if (capacity == 0) {
+                return EMPTY_BUFFER;
+            }
             return new BigEndianHeapChannelBuffer(capacity);
         } else if (endianness == LITTLE_ENDIAN) {
+            if (capacity == 0) {
+                return EMPTY_BUFFER;
+            }
             return new LittleEndianHeapChannelBuffer(capacity);
         } else {
             throw new NullPointerException("endianness");
@@ -156,9 +159,13 @@ public class ChannelBuffers {
      * {@code writerIndex} are {@code 0}.
      */
     public static ChannelBuffer directBuffer(ByteOrder endianness, int capacity) {
+        if (endianness == null) {
+            throw new NullPointerException("endianness");
+        }
         if (capacity == 0) {
             return EMPTY_BUFFER;
         }
+
         ChannelBuffer buffer = new ByteBufferBackedChannelBuffer(
                 ByteBuffer.allocateDirect(capacity).order(endianness));
         buffer.clear();
@@ -209,12 +216,15 @@ public class ChannelBuffers {
      * content will be visible to the returned buffer.
      */
     public static ChannelBuffer wrappedBuffer(ByteOrder endianness, byte[] array) {
-        if (array.length == 0) {
-            return EMPTY_BUFFER;
-        }
         if (endianness == BIG_ENDIAN) {
+            if (array.length == 0) {
+                return EMPTY_BUFFER;
+            }
             return new BigEndianHeapChannelBuffer(array);
         } else if (endianness == LITTLE_ENDIAN) {
+            if (array.length == 0) {
+                return EMPTY_BUFFER;
+            }
             return new LittleEndianHeapChannelBuffer(array);
         } else {
             throw new NullPointerException("endianness");
@@ -236,17 +246,25 @@ public class ChannelBuffers {
      * the specified array's content will be visible to the returned buffer.
      */
     public static ChannelBuffer wrappedBuffer(ByteOrder endianness, byte[] array, int offset, int length) {
-        if (length == 0) {
-            return EMPTY_BUFFER;
+        if (endianness == null) {
+            throw new NullPointerException("endianness");
         }
         if (offset == 0) {
             if (length == array.length) {
                 return wrappedBuffer(endianness, array);
             } else {
-                return new TruncatedChannelBuffer(wrappedBuffer(endianness, array), length);
+                if (length == 0) {
+                    return EMPTY_BUFFER;
+                } else {
+                    return new TruncatedChannelBuffer(wrappedBuffer(endianness, array), length);
+                }
             }
         } else {
-            return new SlicedChannelBuffer(wrappedBuffer(endianness, array), offset, length);
+            if (length == 0) {
+                return EMPTY_BUFFER;
+            } else {
+                return new SlicedChannelBuffer(wrappedBuffer(endianness, array), offset, length);
+            }
         }
     }
 
@@ -298,15 +316,21 @@ public class ChannelBuffers {
     public static ChannelBuffer wrappedBuffer(ByteOrder endianness, byte[]... arrays) {
         switch (arrays.length) {
         case 0:
-            return EMPTY_BUFFER;
+            break;
         case 1:
-            return wrappedBuffer(endianness, arrays[0]);
+            if (arrays[0].length != 0) {
+                return wrappedBuffer(endianness, arrays[0]);
+            }
+            break;
+        default:
+            ChannelBuffer[] wrappedBuffers = new ChannelBuffer[arrays.length];
+            for (int i = 0; i < arrays.length; i ++) {
+                wrappedBuffers[i] = wrappedBuffer(endianness, arrays[i]);
+            }
+            return wrappedBuffer(wrappedBuffers);
         }
-        ChannelBuffer[] wrappedBuffers = new ChannelBuffer[arrays.length];
-        for (int i = 0; i < arrays.length; i ++) {
-            wrappedBuffers[i] = wrappedBuffer(endianness, arrays[i]);
-        }
-        return wrappedBuffer(wrappedBuffers);
+
+        return EMPTY_BUFFER;
     }
 
     /**
@@ -321,12 +345,20 @@ public class ChannelBuffers {
     public static ChannelBuffer wrappedBuffer(ChannelBuffer... buffers) {
         switch (buffers.length) {
         case 0:
-            return EMPTY_BUFFER;
+            break;
         case 1:
-            return wrappedBuffer(buffers[0]);
+            if (buffers[0].readable()) {
+                return wrappedBuffer(buffers[0]);
+            }
+            break;
         default:
-            return new CompositeChannelBuffer(buffers);
+            for (ChannelBuffer b: buffers) {
+                if (b.readable()) {
+                    return new CompositeChannelBuffer(buffers);
+                }
+            }
         }
+        return EMPTY_BUFFER;
     }
 
     /**
@@ -341,15 +373,21 @@ public class ChannelBuffers {
     public static ChannelBuffer wrappedBuffer(ByteBuffer... buffers) {
         switch (buffers.length) {
         case 0:
-            return EMPTY_BUFFER;
+            break;
         case 1:
-            return wrappedBuffer(buffers[0]);
+            if (buffers[0].hasRemaining()) {
+                return wrappedBuffer(buffers[0]);
+            }
+            break;
+        default:
+            ChannelBuffer[] wrappedBuffers = new ChannelBuffer[buffers.length];
+            for (int i = 0; i < buffers.length; i ++) {
+                wrappedBuffers[i] = wrappedBuffer(buffers[i]);
+            }
+            return wrappedBuffer(wrappedBuffers);
         }
-        ChannelBuffer[] wrappedBuffers = new ChannelBuffer[buffers.length];
-        for (int i = 0; i < buffers.length; i ++) {
-            wrappedBuffers[i] = wrappedBuffer(buffers[i]);
-        }
-        return wrappedBuffer(wrappedBuffers);
+
+        return EMPTY_BUFFER;
     }
 
     /**
@@ -368,12 +406,15 @@ public class ChannelBuffers {
      * {@code array.length} respectively.
      */
     public static ChannelBuffer copiedBuffer(ByteOrder endianness, byte[] array) {
-        if (array.length == 0) {
-            return EMPTY_BUFFER;
-        }
         if (endianness == BIG_ENDIAN) {
+            if (array.length == 0) {
+                return EMPTY_BUFFER;
+            }
             return new BigEndianHeapChannelBuffer(array.clone());
         } else if (endianness == LITTLE_ENDIAN) {
+            if (array.length == 0) {
+                return EMPTY_BUFFER;
+            }
             return new LittleEndianHeapChannelBuffer(array.clone());
         } else {
             throw new NullPointerException("endianness");
@@ -397,6 +438,9 @@ public class ChannelBuffers {
      * the specified {@code length} respectively.
      */
     public static ChannelBuffer copiedBuffer(ByteOrder endianness, byte[] array, int offset, int length) {
+        if (endianness == null) {
+            throw new NullPointerException("endianness");
+        }
         if (length == 0) {
             return EMPTY_BUFFER;
         }
@@ -433,7 +477,11 @@ public class ChannelBuffers {
      * respectively.
      */
     public static ChannelBuffer copiedBuffer(ChannelBuffer buffer) {
-        return buffer.copy();
+        if (buffer.readable()) {
+            return buffer.copy();
+        } else {
+            return EMPTY_BUFFER;
+        }
     }
 
     /**
@@ -457,7 +505,11 @@ public class ChannelBuffers {
         case 0:
             return EMPTY_BUFFER;
         case 1:
-            return copiedBuffer(endianness, arrays[0]);
+            if (arrays[0].length == 0) {
+                return EMPTY_BUFFER;
+            } else {
+                return copiedBuffer(endianness, arrays[0]);
+            }
         }
 
         // Merge the specified arrays into one array.
@@ -468,6 +520,10 @@ public class ChannelBuffers {
                         "The total length of the specified arrays is too big.");
             }
             length += a.length;
+        }
+
+        if (length == 0) {
+            return EMPTY_BUFFER;
         }
 
         byte[] mergedArray = new byte[length];
@@ -500,7 +556,7 @@ public class ChannelBuffers {
 
         ChannelBuffer[] copiedBuffers = new ChannelBuffer[buffers.length];
         for (int i = 0; i < buffers.length; i ++) {
-            copiedBuffers[i] = buffers[i].copy();
+            copiedBuffers[i] = copiedBuffer(buffers[i]);
         }
         return wrappedBuffer(copiedBuffers);
     }
@@ -525,7 +581,7 @@ public class ChannelBuffers {
 
         ChannelBuffer[] copiedBuffers = new ChannelBuffer[buffers.length];
         for (int i = 0; i < buffers.length; i ++) {
-            copiedBuffers[i] = wrappedBuffer(buffers[i]).copy();
+            copiedBuffers[i] = copiedBuffer(buffers[i]);
         }
         return wrappedBuffer(copiedBuffers);
     }
@@ -620,10 +676,18 @@ public class ChannelBuffers {
 
         int hashCode = 1;
         int arrayIndex = buffer.readerIndex();
-        for (int i = intCount; i > 0; i --) {
-            hashCode = 31 * hashCode + buffer.getInt(arrayIndex);
-            arrayIndex += 4;
+        if (buffer.order() == BIG_ENDIAN) {
+            for (int i = intCount; i > 0; i --) {
+                hashCode = 31 * hashCode + buffer.getInt(arrayIndex);
+                arrayIndex += 4;
+            }
+        } else {
+            for (int i = intCount; i > 0; i --) {
+                hashCode = 31 * hashCode + swapInt(buffer.getInt(arrayIndex));
+                arrayIndex += 4;
+            }
         }
+
         for (int i = byteCount; i > 0; i --) {
             hashCode = 31 * hashCode + buffer.getByte(arrayIndex ++);
         }
@@ -631,6 +695,7 @@ public class ChannelBuffers {
         if (hashCode == 0) {
             hashCode = 1;
         }
+
         return hashCode;
     }
 
@@ -650,12 +715,23 @@ public class ChannelBuffers {
 
         int aIndex = bufferA.readerIndex();
         int bIndex = bufferB.readerIndex();
-        for (int i = longCount; i > 0; i --) {
-            if (bufferA.getLong(aIndex) != bufferB.getLong(bIndex)) {
-                return false;
+
+        if (bufferA.order() == bufferB.order()) {
+            for (int i = longCount; i > 0; i --) {
+                if (bufferA.getLong(aIndex) != bufferB.getLong(bIndex)) {
+                    return false;
+                }
+                aIndex += 8;
+                bIndex += 8;
             }
-            aIndex += 8;
-            bIndex += 8;
+        } else {
+            for (int i = longCount; i > 0; i --) {
+                if (bufferA.getLong(aIndex) != swapLong(bufferB.getLong(bIndex))) {
+                    return false;
+                }
+                aIndex += 8;
+                bIndex += 8;
+            }
         }
 
         for (int i = byteCount; i > 0; i --) {
@@ -682,16 +758,31 @@ public class ChannelBuffers {
 
         int aIndex = bufferA.readerIndex();
         int bIndex = bufferB.readerIndex();
-        for (int i = longCount; i > 0; i --) {
-            long va = bufferA.getLong(aIndex);
-            long vb = bufferB.getLong(bIndex);
-            if (va > vb) {
-                return 1;
-            } else if (va < vb) {
-                return -1;
+
+        if (bufferA.order() == bufferB.order()) {
+            for (int i = longCount; i > 0; i --) {
+                long va = bufferA.getLong(aIndex);
+                long vb = bufferB.getLong(bIndex);
+                if (va > vb) {
+                    return 1;
+                } else if (va < vb) {
+                    return -1;
+                }
+                aIndex += 8;
+                bIndex += 8;
             }
-            aIndex += 8;
-            bIndex += 8;
+        } else {
+            for (int i = longCount; i > 0; i --) {
+                long va = bufferA.getLong(aIndex);
+                long vb = swapLong(bufferB.getLong(bIndex));
+                if (va > vb) {
+                    return 1;
+                } else if (va < vb) {
+                    return -1;
+                }
+                aIndex += 8;
+                bIndex += 8;
+            }
         }
 
         for (int i = byteCount; i > 0; i --) {

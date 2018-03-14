@@ -25,6 +25,7 @@ package org.jboss.netty.channel.socket.nio;
 import static org.jboss.netty.channel.Channels.*;
 
 import java.io.IOException;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.SelectionKey;
@@ -32,6 +33,7 @@ import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -154,7 +156,8 @@ class NioWorker implements Runnable {
                 // connections are registered in a one-by-one manner instead of
                 // concurrent manner.
                 if (selector.keys().isEmpty()) {
-                    if (shutdown) {
+                    if (shutdown ||
+                        executor instanceof ExecutorService && ((ExecutorService) executor).isShutdown()) {
                         synchronized (selectorGuard) {
                             if (selector.keys().isEmpty()) {
                                 try {
@@ -236,6 +239,8 @@ class NioWorker implements Runnable {
                 }
             }
             failure = false;
+        } catch (AsynchronousCloseException e) {
+            // Can happen, and doesn't need a user attention.
         } catch (Throwable t) {
             fireExceptionCaught(channel, t);
         }

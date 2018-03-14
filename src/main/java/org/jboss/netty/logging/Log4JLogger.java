@@ -20,62 +20,75 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.netty.util;
+package org.jboss.netty.logging;
 
-import java.io.Serializable;
-import java.util.AbstractSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import org.apache.log4j.Logger;
 
 /**
- * A {@link Map}-backed {@link Set}.
- *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)
  *
  * @version $Rev$, $Date$
+ *
  */
-public class MapBackedSet<E> extends AbstractSet<E> implements Serializable {
+class Log4JLogger implements InternalLogger {
 
-    private static final long serialVersionUID = -6761513279741915432L;
+    private final Logger logger;
 
-    private final Map<E, Boolean> map;
+    Log4JLogger(Logger logger) {
+        this.logger = logger;
+    }
 
-    /**
-     * Creates a new instance which wraps the specified {@code map}.
-     */
-    public MapBackedSet(Map<E, Boolean> map) {
-        this.map = map;
+    public void debug(String msg) {
+        logger.debug(msg);
+    }
+
+    public void debug(String msg, Throwable cause) {
+        logger.debug(msg, cause);
+    }
+
+    public void error(String msg) {
+        logger.error(msg);
+    }
+
+    public void error(String msg, Throwable cause) {
+        logger.error(msg, cause);
+    }
+
+    public void info(String msg) {
+        logger.info(msg);
+    }
+
+    public void info(String msg, Throwable cause) {
+        logger.info(msg, cause);
+    }
+
+    public boolean isDebugEnabled() {
+        return logger.isDebugEnabled();
+    }
+
+    public boolean isErrorEnabled() {
+        return true;
+    }
+
+    public boolean isInfoEnabled() {
+        return logger.isInfoEnabled();
+    }
+
+    public boolean isWarnEnabled() {
+        return true;
+    }
+
+    public void warn(String msg) {
+        logger.warn(msg);
+    }
+
+    public void warn(String msg, Throwable cause) {
+        logger.warn(msg, cause);
     }
 
     @Override
-    public int size() {
-        return map.size();
-    }
-
-    @Override
-    public boolean contains(Object o) {
-        return map.containsKey(o);
-    }
-
-    @Override
-    public boolean add(E o) {
-        return map.put(o, Boolean.TRUE) == null;
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        return map.remove(o) != null;
-    }
-
-    @Override
-    public void clear() {
-        map.clear();
-    }
-
-    @Override
-    public Iterator<E> iterator() {
-        return map.keySet().iterator();
+    public String toString() {
+        return String.valueOf(logger.getName());
     }
 }

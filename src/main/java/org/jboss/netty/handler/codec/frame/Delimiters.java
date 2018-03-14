@@ -43,7 +43,7 @@ public class Delimiters {
         return new ChannelBuffer[] {
                 ChannelBuffers.wrappedBuffer(new byte[] { '\r', '\n' }),
                 ChannelBuffers.wrappedBuffer(new byte[] { '\n' }),
-                ChannelBuffers.wrappedBuffer(new byte[] { '\r' }) };
+        };
     }
 
     private Delimiters() {

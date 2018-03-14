@@ -115,7 +115,7 @@ public abstract class HeapChannelBuffer extends AbstractChannelBuffer {
 
     public int setBytes(int index, InputStream in, int length) throws IOException {
         int readBytes = 0;
-        while (length > 0) {
+        do {
             int localReadBytes = in.read(array, index, length);
             if (localReadBytes < 0) {
                 if (readBytes == 0) {
@@ -127,7 +127,7 @@ public abstract class HeapChannelBuffer extends AbstractChannelBuffer {
             readBytes += localReadBytes;
             index += localReadBytes;
             length -= localReadBytes;
-        }
+        } while (length > 0);
 
         return readBytes;
     }
@@ -136,7 +136,7 @@ public abstract class HeapChannelBuffer extends AbstractChannelBuffer {
         ByteBuffer buf = ByteBuffer.wrap(array, index, length);
         int readBytes = 0;
 
-        while (readBytes < length) {
+        do {
             int localReadBytes = in.read(buf);
             if (localReadBytes < 0) {
                 if (readBytes == 0) {
@@ -148,19 +148,25 @@ public abstract class HeapChannelBuffer extends AbstractChannelBuffer {
                 break;
             }
             readBytes += localReadBytes;
-        }
+        } while (readBytes < length);
 
         return readBytes;
     }
 
     public ChannelBuffer slice(int index, int length) {
         if (index == 0) {
+            if (length == 0) {
+                return ChannelBuffers.EMPTY_BUFFER;
+            }
             if (length == array.length) {
                 return duplicate();
             } else {
                 return new TruncatedChannelBuffer(this, length);
             }
         } else {
+            if (length == 0) {
+                return ChannelBuffers.EMPTY_BUFFER;
+            }
             return new SlicedChannelBuffer(this, index, length);
         }
     }

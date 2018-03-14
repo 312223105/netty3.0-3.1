@@ -47,6 +47,7 @@ import java.util.List;
 public class CompositeChannelBuffer extends AbstractChannelBuffer {
 
     private final ChannelBuffer[] slices;
+    private final ByteOrder order;
     private final int[] indices;
     private int lastSliceId;
 
@@ -55,10 +56,21 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
             throw new IllegalArgumentException("buffers should not be empty.");
         }
 
-        ByteOrder expectedEndianness = buffers[0].order();
+        ByteOrder expectedEndianness = null;
+        for (ChannelBuffer buffer : buffers) {
+            if (buffer.capacity() != 0) {
+                expectedEndianness = buffer.order();
+            }
+        }
+
+        if (expectedEndianness == null) {
+            throw new IllegalArgumentException("buffers have only empty buffers.");
+        }
+
+        order = expectedEndianness;
         slices = new ChannelBuffer[buffers.length];
         for (int i = 0; i < buffers.length; i ++) {
-            if (buffers[i].order() != expectedEndianness) {
+            if (buffers[i].capacity() != 0 && buffers[i].order() != expectedEndianness) {
                 throw new IllegalArgumentException(
                         "All buffers must have the same endianness.");
             }
@@ -72,13 +84,14 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
     }
 
     private CompositeChannelBuffer(CompositeChannelBuffer buffer) {
+        order = buffer.order;
         slices = buffer.slices.clone();
         indices = buffer.indices.clone();
         setIndex(buffer.readerIndex(), buffer.writerIndex());
     }
 
     public ByteOrder order() {
-        return slices[0].order();
+        return order;
     }
 
     public int capacity() {
@@ -136,7 +149,7 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
 
     public void getBytes(int index, byte[] dst, int dstIndex, int length) {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index > capacity() - length || dstIndex > dst.length - length) {
             throw new IndexOutOfBoundsException();
         }
 
@@ -157,7 +170,7 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         int limit = dst.limit();
         int length = dst.remaining();
-        if (index + length >= capacity()) {
+        if (index > capacity() - length) {
             throw new IndexOutOfBoundsException();
         }
 
@@ -180,7 +193,7 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
 
     public void getBytes(int index, ChannelBuffer dst, int dstIndex, int length) {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index > capacity() - length || dstIndex > dst.capacity() - length) {
             throw new IndexOutOfBoundsException();
         }
 
@@ -207,7 +220,7 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
     public void getBytes(int index, OutputStream out, int length)
             throws IOException {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index > capacity() - length) {
             throw new IndexOutOfBoundsException();
         }
 
@@ -282,7 +295,7 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
 
     public void setBytes(int index, byte[] src, int srcIndex, int length) {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index > capacity() - length || srcIndex > src.length - length) {
             throw new IndexOutOfBoundsException();
         }
 
@@ -303,7 +316,7 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         int limit = src.limit();
         int length = src.remaining();
-        if (index + length >= capacity()) {
+        if (index > capacity() - length) {
             throw new IndexOutOfBoundsException();
         }
 
@@ -326,7 +339,7 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
 
     public void setBytes(int index, ChannelBuffer src, int srcIndex, int length) {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index > capacity() - length || srcIndex > src.capacity() - length) {
             throw new IndexOutOfBoundsException();
         }
 
@@ -346,14 +359,14 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
     public int setBytes(int index, InputStream in, int length)
             throws IOException {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index > capacity() - length) {
             throw new IndexOutOfBoundsException();
         }
 
         int i = sliceId;
         int readBytes = 0;
 
-        while (length > 0) {
+        do {
             ChannelBuffer s = slices[i];
             int adjustment = indices[i];
             int localLength = Math.min(length, s.capacity() - (index - adjustment));
@@ -365,10 +378,18 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
                     break;
                 }
             }
-            index += localLength;
-            length -= localLength;
-            i ++;
-        }
+
+            if (localReadBytes == localLength) {
+                index += localLength;
+                length -= localLength;
+                readBytes += localLength;
+                i ++;
+            } else {
+                index += localReadBytes;
+                length -= localReadBytes;
+                readBytes += localReadBytes;
+            }
+        } while (length > 0);
 
         return readBytes;
     }
@@ -376,40 +397,46 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
     public int setBytes(int index, ScatteringByteChannel in, int length)
             throws IOException {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index > capacity() - length) {
             throw new IndexOutOfBoundsException();
         }
 
         int i = sliceId;
-        int writtenBytes = 0;
-        while (length > 0) {
+        int readBytes = 0;
+        do {
             ChannelBuffer s = slices[i];
             int adjustment = indices[i];
             int localLength = Math.min(length, s.capacity() - (index - adjustment));
-            int localWrittenBytes = s.setBytes(index - adjustment, in, localLength);
-            writtenBytes += localWrittenBytes;
-            if (localLength != localWrittenBytes) {
-                break;
-            }
-            index += localLength;
-            length -= localLength;
-            i ++;
-        }
+            int localReadBytes = s.setBytes(index - adjustment, in, localLength);
 
-        return writtenBytes;
+            if (localReadBytes == localLength) {
+                index += localLength;
+                length -= localLength;
+                readBytes += localLength;
+                i ++;
+            } else {
+                index += localReadBytes;
+                length -= localReadBytes;
+                readBytes += localReadBytes;
+            }
+        } while (length > 0);
+
+        return readBytes;
     }
 
     public ChannelBuffer duplicate() {
-        return new CompositeChannelBuffer(this);
+        ChannelBuffer duplicate = new CompositeChannelBuffer(this);
+        duplicate.setIndex(readerIndex(), writerIndex());
+        return duplicate;
     }
 
     public ChannelBuffer copy(int index, int length) {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index > capacity() - length) {
             throw new IndexOutOfBoundsException();
         }
 
-        ChannelBuffer dst = ChannelBuffers.buffer(length);
+        ChannelBuffer dst = ChannelBuffers.buffer(order(), length);
         int dstIndex = 0;
         int i = sliceId;
 
@@ -429,7 +456,19 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
     }
 
     public ChannelBuffer slice(int index, int length) {
-        return new SlicedChannelBuffer(this, index, length);
+        if (index == 0) {
+            if (length == 0) {
+                return ChannelBuffers.EMPTY_BUFFER;
+            } else {
+                return new TruncatedChannelBuffer(this, length);
+            }
+        } else if (index < 0 || index > capacity() - length) {
+            throw new IndexOutOfBoundsException();
+        } else if (length == 0) {
+            return ChannelBuffers.EMPTY_BUFFER;
+        } else {
+            return new SlicedChannelBuffer(this, index, length);
+        }
     }
 
     public ByteBuffer toByteBuffer(int index, int length) {
