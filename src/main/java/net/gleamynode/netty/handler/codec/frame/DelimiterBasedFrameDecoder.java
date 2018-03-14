@@ -119,7 +119,7 @@ public class DelimiterBasedFrameDecoder extends FrameDecoder {
         if (delimiter == null) {
             throw new NullPointerException("delimiter");
         }
-        if (!delimiter.isReadable()) {
+        if (!delimiter.readable()) {
             throw new IllegalArgumentException("empty delimiter");
         }
     }

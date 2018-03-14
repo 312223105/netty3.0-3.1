@@ -57,7 +57,7 @@ class NioWorker implements Runnable {
         this.executor = executor;
     }
 
-    void register(NioSocketChannel channel) {
+    void register(NioSocketChannel channel, ChannelFuture future) {
         boolean firstChannel = started.compareAndSet(false, true);
         Selector selector;
         if (firstChannel) {
@@ -80,7 +80,11 @@ class NioWorker implements Runnable {
         if (firstChannel) {
             try {
                 channel.socket.register(selector, SelectionKey.OP_READ, channel);
+                if (future != null) {
+                    future.setSuccess();
+                }
             } catch (ClosedChannelException e) {
+                future.setFailure(e);
                 throw new ChannelException(
                         "Failed to register a socket to the selector.", e);
             }
@@ -103,7 +107,11 @@ class NioWorker implements Runnable {
                 selector.wakeup();
                 try {
                     channel.socket.register(selector, SelectionKey.OP_READ, channel);
+                    if (future != null) {
+                        future.setSuccess();
+                    }
                 } catch (ClosedChannelException e) {
+                    future.setFailure(e);
                     throw new ChannelException(
                             "Failed to register a socket to the selector.", e);
                 }
@@ -131,23 +139,36 @@ class NioWorker implements Runnable {
                     processSelectedKeys(selector.selectedKeys());
                 }
 
+                // Exit the loop when there's nothing to handle.
+                // The shutdown flag is used to delay the shutdown of this
+                // loop to avoid excessive Selector creation when
+                // connections are registered in a one-by-one manner instead of
+                // concurrent manner.
                 if (selector.keys().isEmpty()) {
                     if (shutdown) {
-                        try {
-                            selector.close();
-                        } catch (IOException e) {
-                            logger.log(
-                                    Level.WARNING,
-                                    "Failed to close a selector.", e);
-                        } finally {
-                            this.selector = null;
+                        synchronized (selectorGuard) {
+                            if (selector.keys().isEmpty()) {
+                                try {
+                                    selector.close();
+                                } catch (IOException e) {
+                                    logger.log(
+                                            Level.WARNING,
+                                            "Failed to close a selector.", e);
+                                } finally {
+                                    this.selector = null;
+                                }
+                                started.set(false);
+                                break;
+                            } else {
+                                shutdown = false;
+                            }
                         }
-                        started.set(false);
-                        break;
                     } else {
                         // Give one more second.
                         shutdown = true;
                     }
+                } else {
+                    shutdown = false;
                 }
             } catch (Throwable t) {
                 logger.log(

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.util.ArrayList;
@@ -41,21 +42,34 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
     private int lastSliceId;
 
     public CompositeChannelBuffer(ChannelBuffer... buffers) {
+        if (buffers.length == 0) {
+            throw new IllegalArgumentException("buffers should not be empty.");
+        }
+
+        ByteOrder expectedEndianness = buffers[0].order();
         slices = new ChannelBuffer[buffers.length];
         for (int i = 0; i < buffers.length; i ++) {
+            if (buffers[i].order() != expectedEndianness) {
+                throw new IllegalArgumentException(
+                        "All buffers must have the same endianness.");
+            }
             slices[i] = buffers[i].slice();
         }
         indices = new int[buffers.length + 1];
         for (int i = 1; i <= buffers.length; i ++) {
             indices[i] = indices[i - 1] + slices[i - 1].capacity();
         }
+        writerIndex(capacity());
     }
 
     private CompositeChannelBuffer(CompositeChannelBuffer buffer) {
         slices = buffer.slices.clone();
         indices = buffer.indices.clone();
-        readerIndex(buffer.readerIndex());
-        writerIndex(buffer.writerIndex());
+        setIndex(buffer.readerIndex(), buffer.writerIndex());
+    }
+
+    public ByteOrder order() {
+        return slices[0].order();
     }
 
     public int capacity() {
@@ -71,8 +85,10 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         if (index + 2 <= indices[sliceId + 1]) {
             return slices[sliceId].getShort(index - indices[sliceId]);
-        } else {
+        } else if (order() == ByteOrder.BIG_ENDIAN) {
             return (short) ((getByte(index) & 0xff) << 8 | getByte(index + 1) & 0xff);
+        } else {
+            return (short) (getByte(index) & 0xff | (getByte(index + 1) & 0xff) << 8);
         }
     }
 
@@ -80,8 +96,10 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         if (index + 3 <= indices[sliceId + 1]) {
             return slices[sliceId].getMedium(index - indices[sliceId]);
-        } else {
+        } else if (order() == ByteOrder.BIG_ENDIAN) {
             return (getShort(index) & 0xffff) << 8 | getByte(index + 2) & 0xff;
+        } else {
+            return getShort(index) & 0xFFFF | (getByte(index + 2) & 0xFF) << 16;
         }
     }
 
@@ -89,8 +107,10 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         if (index + 4 <= indices[sliceId + 1]) {
             return slices[sliceId].getInt(index - indices[sliceId]);
-        } else {
+        } else if (order() == ByteOrder.BIG_ENDIAN) {
             return (getShort(index) & 0xffff) << 16 | getShort(index + 2) & 0xffff;
+        } else {
+            return getShort(index) & 0xFFFF | (getShort(index + 2) & 0xFFFF) << 16;
         }
     }
 
@@ -98,8 +118,10 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         if (index + 8 <= indices[sliceId + 1]) {
             return slices[sliceId].getLong(index - indices[sliceId]);
-        } else {
+        } else if (order() == ByteOrder.BIG_ENDIAN) {
             return (getInt(index) & 0xffffffffL) << 32 | getInt(index + 4) & 0xffffffffL;
+        } else {
+            return getInt(index) & 0xFFFFFFFFL | (getInt(index + 4) & 0xFFFFFFFFL) << 32;
         }
     }
 
@@ -201,9 +223,12 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         if (index + 2 <= indices[sliceId + 1]) {
             slices[sliceId].setShort(index - indices[sliceId], value);
-        } else {
+        } else if (order() == ByteOrder.BIG_ENDIAN) {
             setByte(index, (byte) (value >>> 8));
             setByte(index + 1, (byte) value);
+        } else {
+            setByte(index    , (byte) value);
+            setByte(index + 1, (byte) (value >>> 8));
         }
     }
 
@@ -211,9 +236,12 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         if (index + 3 <= indices[sliceId + 1]) {
             slices[sliceId].setMedium(index - indices[sliceId], value);
-        } else {
+        } else if (order() == ByteOrder.BIG_ENDIAN) {
             setShort(index, (short) (value >>> 8));
             setByte(index + 2, (byte) value);
+        } else {
+            setShort(index    , (short) value);
+            setByte (index + 2, (byte) (value >>> 16));
         }
     }
 
@@ -221,9 +249,12 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         if (index + 4 <= indices[sliceId + 1]) {
             slices[sliceId].setInt(index - indices[sliceId], value);
-        } else {
+        } else if (order() == ByteOrder.BIG_ENDIAN) {
             setShort(index, (short) (value >>> 16));
             setShort(index + 2, (short) value);
+        } else {
+            setShort(index    , (short) value);
+            setShort(index + 2, (short) (value >>> 16));
         }
     }
 
@@ -231,9 +262,12 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         int sliceId = sliceId(index);
         if (index + 8 <= indices[sliceId + 1]) {
             slices[sliceId].setLong(index - indices[sliceId], value);
-        } else {
+        } else if (order() == ByteOrder.BIG_ENDIAN) {
             setInt(index, (int) (value >>> 32));
             setInt(index + 4, (int) value);
+        } else {
+            setInt(index    , (int) value);
+            setInt(index + 4, (int) (value >>> 32));
         }
     }
 
@@ -349,6 +383,31 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
         return new CompositeChannelBuffer(this);
     }
 
+    public ChannelBuffer copy(int index, int length) {
+        int sliceId = sliceId(index);
+        if (index + length >= capacity()) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        ChannelBuffer dst = ChannelBuffers.buffer(length);
+        int dstIndex = 0;
+        int i = sliceId;
+
+        while (length > 0) {
+            ChannelBuffer s = slices[i];
+            int adjustment = indices[i];
+            int localLength = Math.min(length, s.capacity() - (index - adjustment));
+            s.getBytes(index - adjustment, dst, dstIndex, localLength);
+            index += localLength;
+            dstIndex += localLength;
+            length -= localLength;
+            i ++;
+        }
+
+        dst.writerIndex(dst.capacity());
+        return dst;
+    }
+
     public ChannelBuffer slice(int index, int length) {
         return new SlicedChannelBuffer(this, index, length);
     }
@@ -366,7 +425,7 @@ public class CompositeChannelBuffer extends AbstractChannelBuffer {
     @Override
     public ByteBuffer[] toByteBuffers(int index, int length) {
         int sliceId = sliceId(index);
-        if (index + length >= capacity()) {
+        if (index + length > capacity()) {
             throw new IndexOutOfBoundsException();
         }
 

@@ -22,11 +22,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
 
 public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer {
+
     private final ByteBuffer buffer;
     private final int capacity;
 
@@ -43,8 +45,11 @@ public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer {
     private ByteBufferBackedChannelBuffer(ByteBufferBackedChannelBuffer buffer) {
         this.buffer = buffer.buffer;
         capacity = buffer.capacity;
-        readerIndex(buffer.readerIndex());
-        writerIndex(buffer.writerIndex());
+        setIndex(buffer.readerIndex(), buffer.writerIndex());
+    }
+
+    public ByteOrder order() {
+        return buffer.order();
     }
 
     public int capacity() {
@@ -183,27 +188,6 @@ public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer {
         return out.write((ByteBuffer) buffer.duplicate().position(index).limit(index + length));
     }
 
-    public ByteBuffer toByteBuffer(int index, int length) {
-        if (index == 0 && length == capacity()) {
-            return buffer.duplicate();
-        } else {
-            return ((ByteBuffer) buffer.duplicate().position(index).limit(index + length)).slice();
-        }
-    }
-
-    public ChannelBuffer slice(int index, int length) {
-        if (index == 0 && length == capacity()) {
-            return duplicate();
-        } else {
-            return new ByteBufferBackedChannelBuffer(
-                    ((ByteBuffer) buffer.duplicate().position(index).limit(index + length)));
-        }
-    }
-
-    public ChannelBuffer duplicate() {
-        return new ByteBufferBackedChannelBuffer(this);
-    }
-
     public void setBytes(int index, InputStream in, int length)
             throws IOException {
         if (length == 0) {
@@ -237,5 +221,34 @@ public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer {
     public int setBytes(int index, ScatteringByteChannel in, int length)
             throws IOException {
         return in.read((ByteBuffer) buffer.duplicate().limit(index + length).position(index));
+    }
+
+    public ByteBuffer toByteBuffer(int index, int length) {
+        if (index == 0 && length == capacity()) {
+            return buffer.duplicate();
+        } else {
+            return ((ByteBuffer) buffer.duplicate().position(index).limit(index + length)).slice();
+        }
+    }
+
+    public ChannelBuffer slice(int index, int length) {
+        if (index == 0 && length == capacity()) {
+            return duplicate();
+        } else {
+            return new ByteBufferBackedChannelBuffer(
+                    ((ByteBuffer) buffer.duplicate().position(index).limit(index + length)));
+        }
+    }
+
+    public ChannelBuffer duplicate() {
+        return new ByteBufferBackedChannelBuffer(this);
+    }
+
+    public ChannelBuffer copy(int index, int length) {
+        ByteBuffer src = (ByteBuffer) buffer.duplicate().position(index).limit(index + length);
+        ByteBuffer dst = buffer.isDirect() ? ByteBuffer.allocateDirect(length) : ByteBuffer.allocate(length);
+        dst.put(src);
+        dst.clear();
+        return new ByteBufferBackedChannelBuffer(dst);
     }
 }

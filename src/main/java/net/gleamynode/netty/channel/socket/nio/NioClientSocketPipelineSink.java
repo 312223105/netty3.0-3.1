@@ -127,8 +127,7 @@ class NioClientSocketPipelineSink extends AbstractChannelSink {
             if (channel.socket.connect(remoteAddress)) {
                 NioWorker worker = nextWorker();
                 channel.setWorker(worker);
-                future.setSuccess();
-                worker.register(channel);
+                worker.register(channel, future);
             } else {
                 future.addListener(new ChannelFutureListener() {
                     public void operationComplete(ChannelFuture future) {
@@ -219,23 +218,36 @@ class NioClientSocketPipelineSink extends AbstractChannelSink {
                         processSelectedKeys(selector.selectedKeys());
                     }
 
+                    // Exit the loop when there's nothing to handle.
+                    // The shutdown flag is used to delay the shutdown of this
+                    // loop to avoid excessive Selector creation when
+                    // connection attempts are made in a one-by-one manner
+                    // instead of concurrent manner.
                     if (selector.keys().isEmpty()) {
                         if (shutdown) {
-                            try {
-                                selector.close();
-                            } catch (IOException e) {
-                                logger.log(
-                                        Level.WARNING,
-                                        "Failed to close a selector.", e);
-                            } finally {
-                                this.selector = null;
+                            synchronized (selectorGuard) {
+                                if (selector.keys().isEmpty()) {
+                                    try {
+                                        selector.close();
+                                    } catch (IOException e) {
+                                        logger.log(
+                                                Level.WARNING,
+                                                "Failed to close a selector.", e);
+                                    } finally {
+                                        this.selector = null;
+                                    }
+                                    started.set(false);
+                                    break;
+                                } else {
+                                    shutdown = false;
+                                }
                             }
-                            started.set(false);
-                            break;
                         } else {
                             // Give one more second.
                             shutdown = true;
                         }
+                    } else {
+                        shutdown = false;
                     }
                 } catch (Throwable t) {
                     logger.log(
@@ -275,12 +287,12 @@ class NioClientSocketPipelineSink extends AbstractChannelSink {
                     k.cancel();
                     NioWorker worker = nextWorker();
                     ch.setWorker(worker);
-                    ch.connectFuture.setSuccess();
-                    worker.register(ch);
+                    worker.register(ch, ch.connectFuture);
                 }
-            } catch (IOException e) {
+            } catch (Throwable t) {
                 k.cancel();
-                fireExceptionCaught(ch, e);
+                ch.connectFuture.setFailure(t);
+                fireExceptionCaught(ch, t);
                 close(k);
             }
         }

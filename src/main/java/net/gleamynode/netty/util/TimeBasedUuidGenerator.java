@@ -17,10 +17,10 @@
  */
 package net.gleamynode.netty.util;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.net.InetAddress;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
@@ -83,8 +83,12 @@ public class TimeBasedUuidGenerator {
             throw new InternalError("MD5 not supported");
         }
 
-        byte[] nodeKeyDigest = md.digest(
-                nodeKey.toString().getBytes(Charset.forName("UTF-8")));
+        byte[] nodeKeyDigest;
+        try {
+            nodeKeyDigest = md.digest(nodeKey.toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new Error("UTF-8 is not found");
+        }
 
         // Choose 5 bytes from the digest.
         // Please note that the first byte is always 1 (multicast address.)

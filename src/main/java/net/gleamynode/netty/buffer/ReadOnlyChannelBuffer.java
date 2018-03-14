@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
@@ -33,18 +34,20 @@ public class ReadOnlyChannelBuffer extends AbstractChannelBuffer implements Wrap
             throw new NullPointerException("buffer");
         }
         this.buffer = buffer;
-        readerIndex(buffer.readerIndex());
-        writerIndex(buffer.writerIndex());
+        setIndex(buffer.readerIndex(), buffer.writerIndex());
     }
 
     private ReadOnlyChannelBuffer(ReadOnlyChannelBuffer buffer) {
         this.buffer = buffer.buffer;
-        readerIndex(buffer.readerIndex());
-        writerIndex(buffer.writerIndex());
+        setIndex(buffer.readerIndex(), buffer.writerIndex());
     }
 
     public ChannelBuffer unwrap() {
         return buffer;
+    }
+
+    public ByteOrder order() {
+        return buffer.order();
     }
 
     @Override
@@ -123,6 +126,10 @@ public class ReadOnlyChannelBuffer extends AbstractChannelBuffer implements Wrap
 
     public ChannelBuffer duplicate() {
         return new ReadOnlyChannelBuffer(this);
+    }
+
+    public ChannelBuffer copy(int index, int length) {
+        return new ReadOnlyChannelBuffer(buffer.copy(index, length));
     }
 
     public ChannelBuffer slice(int index, int length) {

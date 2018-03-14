@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
@@ -62,42 +63,44 @@ import java.nio.channels.ScatteringByteChannel;
  * <pre>
  *      +-------------------+------------------+------------------+
  *      | discardable bytes |  readable bytes  |  writable space  |
+ *      |                   |     (CONTENT)    |                  |
  *      +-------------------+------------------+------------------+
  *      |                   |                  |                  |
  *      0      <=      readerIndex   <=   writerIndex    <=    capacity
  * </pre>
  *
- * <h4>Readable bytes</h4>
+ * <h4>Readable bytes (the actual 'content' of the buffer)</h4>
  *
- * This segment is where the actual data is stored.  Any operation whose name
- * starts with {@code read} or {@code skip} will get or skip the data at the
- * current {@link #readerIndex() readerIndex} and increase it by the number of
- * read bytes.  If the argument of the read operation is also a
- * {@link ChannelBuffer} and no specific start index is specified, the
- * specified buffer's {@link #readerIndex() readerIndex} is increased together.
+ * This segment, so called 'the <strong>content</strong> of a buffer', is where
+ * the actual data is stored.  Any operation whose name starts with
+ * {@code read} or {@code skip} will get or skip the data at the current
+ * {@link #readerIndex() readerIndex} and increase it by the number of read
+ * bytes.  If the argument of the read operation is also a {@link ChannelBuffer}
+ * and no start index is specified, the specified buffer's
+ * {@link #readerIndex() readerIndex} is increased together.
  * <p>
- * If there's no more readable bytes left, {@link IndexOutOfBoundsException}
- * is raised.  The default value of newly allocated, wrapped or copied buffer's
+ * If there's not enough content left, {@link IndexOutOfBoundsException} is
+ * raised.  The default value of newly allocated, wrapped or copied buffer's
  * {@link #readerIndex() readerIndex} is {@code 0}.
  *
  * <pre>
  * // Iterates the readable bytes of a buffer.
  * ChannelBuffer buffer = ...;
- * while (buffer.isReadable()) {
+ * while (buffer.readable()) {
  *     System.out.println(buffer.readByte());
  * }
  * </pre>
  *
  * <h4>Writable space</h4>
  *
- * This segment is undefined space which needs to be filled.  Any operation
+ * This segment is a undefined space which needs to be filled.  Any operation
  * whose name ends with {@code write} will write the data at the current
  * {@link #writerIndex() writerIndex} and increase it by the number of written
  * bytes.  If the argument of the write operation is also a {@link ChannelBuffer},
- * and no specific start index is specified, the specified buffer's
+ * and no start index is specified, the specified buffer's
  * {@link #readerIndex() readerIndex} is increased together.
  * <p>
- * If there's no more writable space left, {@link IndexOutOfBoundsException}
+ * If there's not enough writable space left, {@link IndexOutOfBoundsException}
  * is raised.  The default value of newly allocated buffer's
  * {@link #writerIndex() writerIndex} is {@code 0}.  The default value of
  * wrapped or copied buffer's {@link #writerIndex() writerIndex} is the
@@ -124,6 +127,7 @@ import java.nio.channels.ScatteringByteChannel;
  *
  *      +-------------------+------------------+------------------+
  *      | discardable bytes |  readable bytes  |  writable space  |
+ *      |                   |     (CONTENT)    |                  |
  *      +-------------------+------------------+------------------+
  *      |                   |                  |                  |
  *      0      <=      readerIndex   <=   writerIndex    <=    capacity
@@ -133,9 +137,38 @@ import java.nio.channels.ScatteringByteChannel;
  *
  *      +------------------+--------------------------------------+
  *      |  readable bytes  |    writable space (got more space)   |
+ *      |     (CONTENT)    |                                      |
  *      +------------------+--------------------------------------+
  *      |                  |                                      |
  * readerIndex (0) <= writerIndex (decreased)        <=        capacity
+ * </pre>
+ *
+ * <h4>Clearing the buffer indexes</h4>
+ *
+ * You can set both {@link #readerIndex() readerIndex} and
+ * {@link #writerIndex() writerIndex} to {@code 0} by calling {@link #clear()}.
+ * It doesn't clear the buffer content (e.g. filling with {@code 0}) but just
+ * clears the two pointers.  Please also note that the semantic of this
+ * operation is different from {@link ByteBuffer#clear()}.
+ *
+ * <pre>
+ *  BEFORE clear()
+ *
+ *      +-------------------+------------------+------------------+
+ *      | discardable bytes |  readable bytes  |  writable space  |
+ *      |                   |     (CONTENT)    |                  |
+ *      +-------------------+------------------+------------------+
+ *      |                   |                  |                  |
+ *      0      <=      readerIndex   <=   writerIndex    <=    capacity
+ *
+ *
+ *  AFTER clear()
+ *
+ *      +---------------------------------------------------------+
+ *      |             writable space (got more space)             |
+ *      +---------------------------------------------------------+
+ *      |                                                         |
+ *      0 = readerIndex = writerIndex            <=            capacity
  * </pre>
  *
  * <h3>Search operations</h3>
@@ -145,13 +178,17 @@ import java.nio.channels.ScatteringByteChannel;
  * with {@link ChannelBufferIndexFinder} as well as simple static single byte
  * search.
  *
- * <h3>Conversion to a NIO buffer</h3>
+ * <h3>Conversion to existing JDK types</h3>
  *
  * Various {@code toByteBuffer()} and {@code toByteBuffers()} methods convert
  * a {@link ChannelBuffer} into one or more NIO buffers.  These methods avoid
  * buffer allocation and memory copy whenever possible, but there's no
  * guarantee that memory copy will not be involved or that an explicit memory
  * copy will be involved.
+ * <p>
+ * In case you need to convert a {@link ChannelBuffer} into
+ * an {@link InputStream} or an {@link OutputStream}, please refer to
+ * {@link ChannelBufferInputStream} and {@link ChannelBufferOutputStream}.
  *
  * @author The Netty Project (netty@googlegroups.com)
  * @author Trustin Lee (trustin@gmail.com)
@@ -165,22 +202,31 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer> {
     /**
      * A buffer whose capacity is {@code 0}.
      */
-    static ChannelBuffer EMPTY_BUFFER = new HeapChannelBuffer(0);
+    static ChannelBuffer EMPTY_BUFFER = new BigEndianHeapChannelBuffer(0);
 
     /**
-     * Returns the number of bytes (octets) this array can contain.
+     * Returns the number of bytes (octets) this buffer can contain.
      */
     int capacity();
+
+    /**
+     * Returns the <a href="http://en.wikipedia.org/wiki/Endianness">endianness</a>
+     * of this buffer.
+     */
+    ByteOrder order();
 
     int readerIndex();
     void readerIndex(int readerIndex);
     int writerIndex();
     void writerIndex(int writerIndex);
+    void setIndex(int readerIndex, int writerIndex);
 
     int readableBytes();
     int writableBytes();
-    boolean isReadable();
-    boolean isWritable();
+    boolean readable();
+    boolean writable();
+
+    void clear();
 
     void markReaderIndex();
     void resetReaderIndex();
@@ -258,6 +304,8 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer> {
     int indexOf(int fromIndex, int toIndex, byte value);
     int indexOf(int fromIndex, int toIndex, ChannelBufferIndexFinder indexFinder);
 
+    ChannelBuffer copy();
+    ChannelBuffer copy(int index, int length);
     ChannelBuffer slice();
     ChannelBuffer slice(int index, int length);
     ChannelBuffer duplicate();
@@ -268,35 +316,40 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer> {
     ByteBuffer[] toByteBuffers(int index, int length);
 
     /**
-     * Returns a hash code which was calculated from the content of this array.
-     * If there's a byte array which is {@linkplain #equals(Object) equal to}
-     * this array, both arrays should return the same value.
+     * Returns a hash code which was calculated from the content of this
+     * buffer.  If there's a byte array which is
+     * {@linkplain #equals(Object) equal to} this array, both arrays should
+     * return the same value.
      */
     int hashCode();
 
     /**
-     * Determines if the content of the specified array is identical to the
+     * Determines if the content of the specified buffer is identical to the
      * content of this array.  'Identical' here means:
      * <ul>
-     * <li>the length of the two arrays are same and</li>
-     * <li>every single byte of the two arrays are same.</li>
+     * <li>the size of the contents of the two buffers are same and</li>
+     * <li>every single byte of the content of the two buffers are same.</li>
      * </ul>
-     * This method also returns {@code false} for {@code null} and an object
-     * which is not an instance of {@link ChannelBuffer} type.
+     * Please note that it doesn't compare {@link #readerIndex()} nor
+     * {@link #writerIndex()}.  This method also returns {@code false} for
+     * {@code null} and an object which is not an instance of
+     * {@link ChannelBuffer} type.
      */
     boolean equals(Object obj);
 
     /**
-     * Compares the content of the specified array to the content of this
-     * array.  Comparison is performed in the same manner with the string
-     * comparison functions in various languages such as {@code strcmp},
+     * Compares the content of the specified buffer to the content of this
+     * buffer.  Comparison is performed in the same manner with the string
+     * comparison functions of various languages such as {@code strcmp},
      * {@code memcmp} and {@link String#compareTo(String)}.
      */
     int compareTo(ChannelBuffer buffer);
 
     /**
-     * Returns the string representation of this array.  This method doesn't
-     * necessarily return the whole content of the array.
+     * Returns the string representation of this buffer.  This method doesn't
+     * necessarily return the whole content of the buffer but returns
+     * the values of the key properties such as {@link #readerIndex()},
+     * {@link #writerIndex()} and {@link #capacity()}..
      */
     String toString();
 }

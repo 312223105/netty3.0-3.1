@@ -46,6 +46,7 @@ import net.gleamynode.netty.channel.SimpleChannelHandler;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.landmark
  */
 public class ServerBootstrap extends Bootstrap {
 

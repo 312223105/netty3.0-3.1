@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
@@ -35,14 +36,27 @@ import java.nio.channels.ScatteringByteChannel;
 public class DynamicChannelBuffer extends AbstractChannelBuffer {
 
     private final int initialCapacity;
+    private final ByteOrder endianness;
     private ChannelBuffer buffer = ChannelBuffer.EMPTY_BUFFER;
 
     public DynamicChannelBuffer(int estimatedLength) {
+        this(ByteOrder.BIG_ENDIAN, estimatedLength);
+    }
+
+    public DynamicChannelBuffer(ByteOrder endianness, int estimatedLength) {
         if (estimatedLength <= 0) {
             throw new IllegalArgumentException("estimatedLength");
         }
+        if (endianness == null) {
+            throw new NullPointerException("endianness");
+        }
 
         initialCapacity = estimatedLength;
+        this.endianness = endianness;
+    }
+
+    public ByteOrder order() {
+        return endianness;
     }
 
     public int capacity() {
@@ -191,6 +205,15 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer {
         return new DuplicatedChannelBuffer(this);
     }
 
+    public ChannelBuffer copy(int index, int length) {
+        DynamicChannelBuffer copiedBuffer = new DynamicChannelBuffer(endianness, Math.max(length, 64));
+        copiedBuffer.buffer = buffer.copy();
+        if (copiedBuffer.buffer.capacity() == 0) {
+            copiedBuffer.buffer = ChannelBuffer.EMPTY_BUFFER;
+        }
+        return copiedBuffer;
+    }
+
     public ChannelBuffer slice(int index, int length) {
         if (index == 0) {
             return new TruncatedChannelBuffer(this, length);
@@ -219,7 +242,7 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer {
             newCapacity <<= 1;
         }
 
-        ChannelBuffer newBuffer = ChannelBuffers.buffer(newCapacity);
+        ChannelBuffer newBuffer = ChannelBuffers.buffer(endianness, newCapacity);
         newBuffer.writeBytes(buffer, readerIndex(), readableBytes());
         buffer = newBuffer;
     }

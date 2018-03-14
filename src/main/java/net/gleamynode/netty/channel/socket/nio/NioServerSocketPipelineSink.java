@@ -22,6 +22,7 @@ import static net.gleamynode.netty.channel.Channels.*;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -179,15 +180,13 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
 
     private class Boss implements Runnable {
         private final NioServerSocketChannel channel;
-        private volatile boolean started;
 
         Boss(NioServerSocketChannel channel) {
             this.channel = channel;
         }
 
         public void run() {
-            started = true;
-            do {
+            for (;;) {
                 try {
                     SocketChannel acceptedSocket = channel.socket.accept();
                     try {
@@ -197,7 +196,7 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
                         worker.register(new NioAcceptedSocketChannel(
                                         channel.getFactory(), pipeline, channel,
                                         NioServerSocketPipelineSink.this,
-                                        acceptedSocket, worker));
+                                        acceptedSocket, worker), null);
                     } catch (Exception e) {
                         logger.log(
                                 Level.WARNING,
@@ -213,7 +212,11 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
                         }
                     }
                 } catch (SocketTimeoutException e) {
-                    // Thrown every second to stop when requested.
+                    // Thrown every second to get ClosedChannelException
+                    // raised.
+                } catch (ClosedChannelException e) {
+                    // Closed as requested.
+                    break;
                 } catch (IOException e) {
                     logger.log(
                             Level.WARNING,
@@ -224,7 +227,7 @@ class NioServerSocketPipelineSink extends AbstractChannelSink {
                         // Ignore
                     }
                 }
-            } while (started);
+            }
         }
     }
 }

@@ -18,6 +18,9 @@
 package net.gleamynode.netty.handler.codec.frame;
 
 import static net.gleamynode.netty.channel.Channels.*;
+
+import java.net.SocketAddress;
+
 import net.gleamynode.netty.buffer.ChannelBuffer;
 import net.gleamynode.netty.buffer.ChannelBuffers;
 import net.gleamynode.netty.channel.Channel;
@@ -51,18 +54,30 @@ public abstract class FrameDecoder extends SimpleChannelHandler {
         }
 
         ChannelBuffer input = (ChannelBuffer) m;
-        if (!input.isReadable()) {
+        if (!input.readable()) {
             return;
         }
 
-        ChannelBuffer cumulation = this.cumulation;
-        cumulation.discardReadBytes();
-        cumulation.writeBytes(input);
-        callDecode(ctx, e.getChannel());
+        if (cumulation.readable()) {
+            cumulation.discardReadBytes();
+            cumulation.writeBytes(input);
+            callDecode(ctx, e.getChannel(), cumulation, e.getRemoteAddress());
+        } else {
+            callDecode(ctx, e.getChannel(), input, e.getRemoteAddress());
+            if (input.readable()) {
+                cumulation.writeBytes(input);
+            }
+        }
     }
 
     @Override
     public void channelDisconnected(
+            ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        cleanup(ctx, e);
+    }
+
+    @Override
+    public void channelClosed(
             ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         cleanup(ctx, e);
     }
@@ -76,8 +91,16 @@ public abstract class FrameDecoder extends SimpleChannelHandler {
     protected abstract Object decode(
             ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception;
 
-    private void callDecode(ChannelHandlerContext context, Channel channel) throws Exception {
-        while (cumulation.isReadable()) {
+    protected Object decodeLast(
+            ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
+        return decode(ctx, channel, buffer);
+    }
+
+    private void callDecode(
+            ChannelHandlerContext context, Channel channel,
+            ChannelBuffer cumulation, SocketAddress remoteAddress) throws Exception {
+
+        while (cumulation.readable()) {
             int oldReaderIndex = cumulation.readerIndex();
             Object frame = decode(context, channel, cumulation);
             if (frame == null) {
@@ -96,21 +119,26 @@ public abstract class FrameDecoder extends SimpleChannelHandler {
                         "if it returned a frame.");
             }
 
-            fireMessageReceived(context, channel, frame);
+            fireMessageReceived(context, channel, frame, remoteAddress);
         }
     }
 
     private void cleanup(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception {
-        if (cumulation.isReadable()) {
-            // Make sure all frames were read before notifying a closed channel.
-            callDecode(ctx, e.getChannel());
-            if (cumulation.isReadable()) {
-                // and send the remainders too if necessary.
-                fireMessageReceived(
-                        ctx, e.getChannel(), cumulation.readBytes(cumulation.readableBytes()));
+        try {
+            if (cumulation.readable()) {
+                // Make sure all frames are read before notifying a closed channel.
+                callDecode(ctx, e.getChannel(), cumulation, null);
+                if (cumulation.readable()) {
+                    // and send the remainders too if necessary.
+                    Object partialFrame = decodeLast(ctx, e.getChannel(), cumulation);
+                    if (partialFrame != null) {
+                        fireMessageReceived(ctx, e.getChannel(), partialFrame, null);
+                    }
+                }
             }
+        } finally {
+            ctx.sendUpstream(e);
         }
-        ctx.sendUpstream(e);
     }
 }

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
@@ -41,18 +42,20 @@ public class DuplicatedChannelBuffer extends AbstractChannelBuffer implements Wr
             throw new NullPointerException("buffer");
         }
         this.buffer = buffer;
-        writerIndex(buffer.writerIndex());
-        readerIndex(buffer.readerIndex());
+        setIndex(buffer.readerIndex(), buffer.writerIndex());
     }
 
     private DuplicatedChannelBuffer(DuplicatedChannelBuffer buffer) {
         this.buffer = buffer.buffer;
-        writerIndex(buffer.writerIndex());
-        readerIndex(buffer.readerIndex());
+        setIndex(buffer.readerIndex(), buffer.writerIndex());
     }
 
     public ChannelBuffer unwrap() {
         return buffer;
+    }
+
+    public ByteOrder order() {
+        return buffer.order();
     }
 
     public int capacity() {
@@ -81,6 +84,10 @@ public class DuplicatedChannelBuffer extends AbstractChannelBuffer implements Wr
 
     public ChannelBuffer duplicate() {
         return new DuplicatedChannelBuffer(this);
+    }
+
+    public ChannelBuffer copy(int index, int length) {
+        return buffer.copy(index, length);
     }
 
     public ChannelBuffer slice(int index, int length) {

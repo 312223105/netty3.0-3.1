@@ -17,6 +17,7 @@
  */
 package net.gleamynode.netty.handler.execution;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -75,7 +76,16 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
             throw new NullPointerException("objectSizeEstimator");
         }
         this.objectSizeEstimator = objectSizeEstimator;
-        allowCoreThreadTimeOut(true);
+
+        // Call allowCoreThreadTimeOut(true) using reflection
+        // because it's not supported in Java 5.
+        try {
+            Method m = getClass().getMethod("allowCoreThreadTimeOut", new Class[] { boolean.class });
+            m.invoke(this, Boolean.TRUE);
+        } catch (Exception e) {
+            // Java 5
+        }
+
         setMaxChannelMemorySize(maxChannelMemorySize);
         setMaxTotalMemorySize(maxTotalMemorySize);
     }

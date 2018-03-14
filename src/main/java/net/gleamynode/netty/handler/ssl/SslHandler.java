@@ -50,6 +50,7 @@ import net.gleamynode.netty.util.ImmediateExecutor;
  *
  * @version $Rev$, $Date$
  *
+ * @apiviz.landmark
  * @apiviz.uses net.gleamynode.netty.handler.ssl.SslBufferPool
  */
 public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler {
@@ -237,21 +238,23 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
             return null;
         }
 
+        ChannelBuffer frame;
         try {
-            Object frame = unwrap(ctx, channel, buffer, buffer.readerIndex(), packetLength);
-            if (frame == null && engine.isInboundDone()) {
-                for (;;) {
-                    ChannelFuture future = closeFutures.poll();
-                    if (future == null) {
-                        break;
-                    }
-                    Channels.close(ctx, channel, future);
-                }
-            }
-            return frame;
+            frame = unwrap(ctx, channel, buffer, buffer.readerIndex(), packetLength);
         } finally {
             buffer.skipBytes(packetLength);
         }
+
+        if (frame == null && engine.isInboundDone()) {
+            for (;;) {
+                ChannelFuture future = closeFutures.poll();
+                if (future == null) {
+                    break;
+                }
+                Channels.close(ctx, channel, future);
+            }
+        }
+        return frame;
     }
 
     private ChannelFuture wrap(ChannelHandlerContext context, Channel channel)

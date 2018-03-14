@@ -35,13 +35,26 @@ import net.gleamynode.netty.handler.codec.frame.FrameDecoder;
 public class ObjectDecoder extends FrameDecoder {
 
     private final int maxObjectSize;
+    private final ClassLoader classLoader;
 
     public ObjectDecoder() {
         this(1048576);
     }
 
     public ObjectDecoder(int maxObjectSize) {
+        this(maxObjectSize, Thread.currentThread().getContextClassLoader());
+    }
+
+    public ObjectDecoder(int maxObjectSize, ClassLoader classLoader) {
+        if (maxObjectSize <= 0) {
+            throw new IllegalArgumentException("maxObjectSize: " + maxObjectSize);
+        }
+        if (classLoader == null) {
+            classLoader = Thread.currentThread().getContextClassLoader();
+        }
+
         this.maxObjectSize = maxObjectSize;
+        this.classLoader = classLoader;
     }
 
     @Override
@@ -65,11 +78,8 @@ public class ObjectDecoder extends FrameDecoder {
         }
 
         buffer.skipBytes(4);
-        try {
-            return new CompactObjectInputStream(new ChannelBufferInputStream(
-                    buffer, buffer.readerIndex(), dataLen)).readObject();
-        } finally {
-            buffer.skipBytes(dataLen);
-        }
+        return new CompactObjectInputStream(
+                new ChannelBufferInputStream(buffer, dataLen),
+                classLoader).readObject();
     }
 }

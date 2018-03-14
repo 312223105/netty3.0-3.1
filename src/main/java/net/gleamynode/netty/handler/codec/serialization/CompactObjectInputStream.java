@@ -39,6 +39,11 @@ class CompactObjectInputStream extends ObjectInputStream {
         this(in, Thread.currentThread().getContextClassLoader());
     }
 
+    CompactObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {
+        super(in);
+        this.classLoader = classLoader;
+    }
+
     @Override
     protected void readStreamHeader() throws IOException,
             StreamCorruptedException {
@@ -47,11 +52,6 @@ class CompactObjectInputStream extends ObjectInputStream {
             throw new StreamCorruptedException(
                     "Unsupported version: " + version);
         }
-    }
-
-    public CompactObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {
-        super(in);
-        this.classLoader = classLoader;
     }
 
     @Override

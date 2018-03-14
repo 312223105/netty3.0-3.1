@@ -36,38 +36,39 @@ import java.io.InputStream;
 public class ChannelBufferInputStream extends InputStream implements DataInput {
 
     private final ChannelBuffer buffer;
+    private final int startIndex;
     private final int endIndex;
-    private int offset;
-    private Integer mark;
 
     public ChannelBufferInputStream(ChannelBuffer buffer) {
-        this(buffer, buffer.readerIndex(), buffer.readableBytes());
+        this(buffer, buffer.readableBytes());
     }
 
-    public ChannelBufferInputStream(ChannelBuffer buffer, int startIndex, int length) {
+    public ChannelBufferInputStream(ChannelBuffer buffer, int length) {
         if (buffer == null) {
             throw new NullPointerException("buffer");
         }
-        if (startIndex < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (length < 0 || startIndex + length > buffer.capacity()) {
+        if (length > buffer.readableBytes()) {
             throw new IndexOutOfBoundsException();
         }
 
         this.buffer = buffer;
-        offset = startIndex;
+        startIndex = buffer.readerIndex();
         endIndex = startIndex + length;
+        buffer.markReaderIndex();
+    }
+
+    public int readBytes() {
+        return buffer.readerIndex() - startIndex;
     }
 
     @Override
     public int available() throws IOException {
-        return endIndex - offset;
+        return endIndex - buffer.readerIndex();
     }
 
     @Override
     public void mark(int readlimit) {
-        mark = offset;
+        buffer.markReaderIndex();
     }
 
     @Override
@@ -77,10 +78,10 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
 
     @Override
     public int read() throws IOException {
-        if (offset >= endIndex) {
+        if (!buffer.readable()) {
             return -1;
         }
-        return buffer.getByte(offset ++) & 0xff;
+        return buffer.readByte() & 0xff;
     }
 
     @Override
@@ -91,17 +92,13 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
         }
 
         len = Math.min(available, len);
-        buffer.getBytes(offset, b, off, len);
-        offset += len;
+        buffer.readBytes(b, off, len);
         return len;
     }
 
     @Override
     public void reset() throws IOException {
-        if (mark == null) {
-            throw new IOException("mark() not called.");
-        }
-        offset = mark;
+        buffer.resetReaderIndex();
     }
 
     @Override
@@ -122,10 +119,10 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
     }
 
     public byte readByte() throws IOException {
-        if (offset >= endIndex) {
+        if (!buffer.readable()) {
             throw new EOFException();
         }
-        return buffer.getByte(offset ++);
+        return buffer.readByte();
     }
 
     public char readChar() throws IOException {
@@ -145,16 +142,13 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
     }
 
     public void readFully(byte[] b, int off, int len) throws IOException {
-        checkIndex(len);
-        buffer.getBytes(offset, b, off, len);
-        offset += len;
+        checkAvailable(len);
+        buffer.readBytes(b, off, len);
     }
 
     public int readInt() throws IOException {
-        checkIndex(4);
-        int answer = buffer.getInt(offset);
-        offset += 4;
-        return answer;
+        checkAvailable(4);
+        return buffer.readInt();
     }
 
     private final StringBuilder lineBuf = new StringBuilder();
@@ -178,17 +172,13 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
     }
 
     public long readLong() throws IOException {
-        checkIndex(8);
-        long answer = buffer.getLong(offset);
-        offset += 8;
-        return answer;
+        checkAvailable(8);
+        return buffer.readLong();
     }
 
     public short readShort() throws IOException {
-        checkIndex(2);
-        short answer = buffer.getShort(offset);
-        offset += 2;
-        return answer;
+        checkAvailable(2);
+        return buffer.readShort();
     }
 
     public String readUTF() throws IOException {
@@ -205,12 +195,15 @@ public class ChannelBufferInputStream extends InputStream implements DataInput {
 
     public int skipBytes(int n) throws IOException {
         int nBytes = Math.min(available(), n);
-        offset += nBytes;
+        buffer.skipBytes(n);
         return nBytes;
     }
 
-    private void checkIndex(int fieldSize) throws EOFException {
-        if (offset + fieldSize > endIndex) {
+    private void checkAvailable(int fieldSize) throws IOException {
+        if (fieldSize < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (fieldSize > available()) {
             throw new EOFException();
         }
     }

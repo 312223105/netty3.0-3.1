@@ -63,11 +63,23 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         this.writerIndex = writerIndex;
     }
 
-    public boolean isReadable() {
+    public void setIndex(int readerIndex, int writerIndex) {
+        if (readerIndex < 0 || readerIndex > writerIndex || writerIndex > capacity()) {
+            throw new IndexOutOfBoundsException();
+        }
+        this.readerIndex = readerIndex;
+        this.writerIndex = writerIndex;
+    }
+
+    public void clear() {
+        readerIndex = writerIndex = 0;
+    }
+
+    public boolean readable() {
         return readableBytes() > 0;
     }
 
-    public boolean isWritable() {
+    public boolean writable() {
         return writableBytes() > 0;
     }
 
@@ -234,9 +246,9 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
         readerIndex = newReaderIndex;
     }
 
-    public int skipBytes(ChannelBufferIndexFinder firstIndexFindex) {
+    public int skipBytes(ChannelBufferIndexFinder firstIndexFinder) {
         int oldReaderIndex = readerIndex;
-        int newReaderIndex = indexOf(oldReaderIndex, writerIndex, firstIndexFindex);
+        int newReaderIndex = indexOf(oldReaderIndex, writerIndex, firstIndexFinder);
         if (newReaderIndex < 0) {
             throw new NoSuchElementException();
         }
@@ -335,6 +347,10 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer {
                 writeByte((byte) 0);
             }
         }
+    }
+
+    public ChannelBuffer copy() {
+        return copy(readerIndex, readableBytes());
     }
 
     public ChannelBuffer slice() {

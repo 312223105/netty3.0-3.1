@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
@@ -49,6 +50,10 @@ public class TruncatedChannelBuffer extends AbstractChannelBuffer implements Wra
 
     public ChannelBuffer unwrap() {
         return buffer;
+    }
+
+    public ByteOrder order() {
+        return buffer.order();
     }
 
     public int capacity() {
@@ -82,6 +87,10 @@ public class TruncatedChannelBuffer extends AbstractChannelBuffer implements Wra
 
     public ChannelBuffer duplicate() {
         return new TruncatedChannelBuffer(buffer, length);
+    }
+
+    public ChannelBuffer copy(int index, int length) {
+        return buffer.copy(index, length);
     }
 
     public ChannelBuffer slice(int index, int length) {
