@@ -23,8 +23,17 @@
 package org.jboss.netty.channel;
 
 /**
- * The context type which enables the interaction
- * between a {@link ChannelHandler} and its {@link ChannelPipeline}
+ * Provides the properties and operations which are specific to the
+ * {@link ChannelHandler} and the {@link ChannelPipeline} it belongs to.
+ * Via a {@link ChannelHandlerContext}, a {@link ChannelHandler} can send
+ * a upstream or downstream {@link ChannelEvent} to the next or previous
+ * {@link ChannelHandler} in the {@link ChannelPipeline}.
+ *
+ * <pre>
+ * +---------+ 1 .. 1 +----------------+ 1 .. n +----------+
+ * | Handler |------->| HandlerContext |------->| Pipeline |
+ * +---------+        +----------------+        +----------+
+ * </pre>
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)

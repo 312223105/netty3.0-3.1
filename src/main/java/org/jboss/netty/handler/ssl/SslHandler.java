@@ -25,6 +25,7 @@ package org.jboss.netty.handler.ssl;
 import static org.jboss.netty.channel.Channels.*;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -39,7 +40,6 @@ import javax.net.ssl.SSLEngineResult.Status;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelDownstreamHandler;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -96,7 +96,7 @@ import org.jboss.netty.util.ImmediateExecutor;
  * @apiviz.landmark
  * @apiviz.uses org.jboss.netty.handler.ssl.SslBufferPool
  */
-public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler {
+public class SslHandler extends FrameDecoder {
 
     private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 
@@ -257,7 +257,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
     }
 
     /**
-     * Starts SSL / TLS handshake for the specified channel.
+     * Starts an SSL / TLS handshake for the specified channel.
      *
      * @return a {@link ChannelFuture} which is notified when the handshake
      *         succeeds or fails.
@@ -280,7 +280,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
     }
 
     /**
-     * Sends a SSL {@code close_notify} message to the specified channel and
+     * Sends an SSL {@code close_notify} message to the specified channel and
      * destroys the underlying {@link SSLEngine}.
      */
     public ChannelFuture close(Channel channel) throws SSLException {
@@ -293,6 +293,7 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
         return channel.getPipeline().getContext(getClass());
     }
 
+    @Override
     public void handleDownstream(
             final ChannelHandlerContext context, final ChannelEvent evt) throws Exception {
         if (evt instanceof ChannelStateEvent) {
@@ -339,6 +340,15 @@ public class SslHandler extends FrameDecoder implements ChannelDownstreamHandler
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx,
             ChannelStateEvent e) throws Exception {
+
+        // Make sure the handshake future is notified when a connection has
+        // been closed during handshake.
+        synchronized (handshakeLock) {
+            if (handshaking) {
+                handshakeFuture.setFailure(new ClosedChannelException());
+            }
+        }
+
         super.channelDisconnected(ctx, e);
         unwrap(ctx, e.getChannel(), ChannelBuffers.EMPTY_BUFFER, 0, 0);
         engine.closeOutbound();

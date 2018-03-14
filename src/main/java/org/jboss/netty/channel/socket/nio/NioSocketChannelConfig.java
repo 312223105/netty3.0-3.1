@@ -25,11 +25,30 @@ package org.jboss.netty.channel.socket.nio;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
+import org.jboss.netty.channel.ChannelConfig;
 import org.jboss.netty.channel.socket.SocketChannel;
 import org.jboss.netty.channel.socket.SocketChannelConfig;
 
 /**
  * A {@link SocketChannelConfig} for a NIO TCP/IP {@link SocketChannel}.
+ *
+ * <h3>Available options</h3>
+ *
+ * In addition to the options provided by {@link ChannelConfig} and
+ * {@link SocketChannelConfig}, {@link NioSocketChannelConfig} allows the
+ * following options in the option map:
+ *
+ * <table border="1" cellspacing="0" cellpadding="6">
+ * <tr>
+ * <th>Name</th><th>Associated setter method</th>
+ * </tr><tr>
+ * <td>{@code "writeSpinCount"}</td><td>{@link #setWriteSpinCount(int)}</td>
+ * </tr><tr>
+ * <td>{@code "receiveBufferSizePredictor"}</td><td>{@link #setReceiveBufferSizePredictor(ReceiveBufferSizePredictor)}</td>
+ * </tr><tr>
+ * <td>{@code "readWriteFair"}</td><td>{@link #setReadWriteFair(boolean)}</td>
+ * </tr>
+ * </table>
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)
@@ -78,7 +97,7 @@ public interface NioSocketChannelConfig extends SocketChannelConfig {
 
     /**
      * Returns {@code true} if and only if an I/O thread should do its effort
-     * to balance the ratio of read operations and write operations.  Assuring
+     * to balance the ratio of read and write operations.  Assuring
      * the read-write fairness is sometimes necessary in a high speed network
      * because a certain channel can spend too much time on flushing the
      * large number of write requests not giving enough time for other channels
@@ -87,12 +106,12 @@ public interface NioSocketChannelConfig extends SocketChannelConfig {
     boolean isReadWriteFair();
 
     /**
-     * Sets if an I/O thread should do its effort to balance the ratio of read
-     * operations and write operations.  Assuring the read-write fairness is
-     * sometimes necessary in a high speed network because a certain channel
-     * can spend too much time on flushing the large number of write requests
-     * not giving enough time for other channels to perform I/O.  The default
-     * value is {@code false}.
+     * Sets if an I/O thread should balance the ratio of read and write
+     * operations.  Assuring the read-write fairness is sometimes necessary
+     * in a high speed network because a certain channel can spend too much
+     * time on flushing the large number of write requests not giving enough
+     * time for other channels to perform I/O.  The default value is
+     * {@code false}.
      */
     void setReadWriteFair(boolean fair);
 }

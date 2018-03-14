@@ -27,17 +27,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.util.LinkedTransferQueue;
 
 /**
  * A {@link ThreadPoolExecutor} which blocks the task submission when there's
@@ -81,13 +81,14 @@ import org.jboss.netty.channel.ChannelStateEvent;
  */
 public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
 
-    private volatile int maxChannelMemorySize;
-    private volatile int maxTotalMemorySize;
+    private volatile Settings settings = new Settings(0, 0);
+
+    // XXX Can be changed in runtime now.  Make it mutable in 3.1.
     private final ObjectSizeEstimator objectSizeEstimator;
 
-    private final ConcurrentMap<Channel, AtomicInteger> channelCounters =
-        new ConcurrentHashMap<Channel, AtomicInteger>();
-    private final AtomicInteger totalCounter = new AtomicInteger();
+    private final ConcurrentMap<Channel, AtomicLong> channelCounters =
+        new ConcurrentHashMap<Channel, AtomicLong>();
+    private final AtomicLong totalCounter = new AtomicLong();
 
     private final Semaphore semaphore = new Semaphore(0);
 
@@ -101,7 +102,8 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
      *                              Specify {@code 0} to disable.
      */
     public MemoryAwareThreadPoolExecutor(
-            int corePoolSize, int maxChannelMemorySize, int maxTotalMemorySize) {
+            int corePoolSize, long maxChannelMemorySize, long maxTotalMemorySize) {
+
         this(corePoolSize, maxChannelMemorySize, maxTotalMemorySize, 30, TimeUnit.SECONDS);
     }
 
@@ -117,7 +119,9 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
      * @param unit                  the {@link TimeUnit} of {@code keepAliveTime}
      */
     public MemoryAwareThreadPoolExecutor(
-            int corePoolSize, int maxChannelMemorySize, int maxTotalMemorySize, long keepAliveTime, TimeUnit unit) {
+            int corePoolSize, long maxChannelMemorySize, long maxTotalMemorySize,
+            long keepAliveTime, TimeUnit unit) {
+
         this(corePoolSize, maxChannelMemorySize, maxTotalMemorySize, keepAliveTime, unit, Executors.defaultThreadFactory());
     }
 
@@ -134,7 +138,9 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
      * @param threadFactory         the {@link ThreadFactory} of this pool
      */
     public MemoryAwareThreadPoolExecutor(
-            int corePoolSize, int maxChannelMemorySize, int maxTotalMemorySize, long keepAliveTime, TimeUnit unit, ThreadFactory threadFactory) {
+            int corePoolSize, long maxChannelMemorySize, long maxTotalMemorySize,
+            long keepAliveTime, TimeUnit unit, ThreadFactory threadFactory) {
+
         this(corePoolSize, maxChannelMemorySize, maxTotalMemorySize, keepAliveTime, unit, new DefaultObjectSizeEstimator(), threadFactory);
     }
 
@@ -152,8 +158,11 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
      * @param objectSizeEstimator   the {@link ObjectSizeEstimator} of this pool
      */
     public MemoryAwareThreadPoolExecutor(
-            int corePoolSize, int maxChannelMemorySize, int maxTotalMemorySize, long keepAliveTime, TimeUnit unit, ObjectSizeEstimator objectSizeEstimator, ThreadFactory threadFactory) {
-        super(corePoolSize, corePoolSize, keepAliveTime, unit, new LinkedBlockingQueue<Runnable>(), threadFactory);
+            int corePoolSize, long maxChannelMemorySize, long maxTotalMemorySize,
+            long keepAliveTime, TimeUnit unit, ObjectSizeEstimator objectSizeEstimator,
+            ThreadFactory threadFactory) {
+
+        super(corePoolSize, corePoolSize, keepAliveTime, unit, new LinkedTransferQueue<Runnable>(), threadFactory);
 
         if (objectSizeEstimator == null) {
             throw new NullPointerException("objectSizeEstimator");
@@ -183,39 +192,51 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
     /**
      * Returns the maximum total size of the queued events per channel.
      */
-    public int getMaxChannelMemorySize() {
-        return maxChannelMemorySize;
+    public long getMaxChannelMemorySize() {
+        return settings.maxChannelMemorySize;
     }
 
     /**
      * Sets the maximum total size of the queued events per channel.
      * Specify {@code 0} to disable.
      */
-    public void setMaxChannelMemorySize(int maxChannelMemorySize) {
+    public void setMaxChannelMemorySize(long maxChannelMemorySize) {
         if (maxChannelMemorySize < 0) {
             throw new IllegalArgumentException(
                     "maxChannelMemorySize: " + maxChannelMemorySize);
         }
-        this.maxChannelMemorySize = maxChannelMemorySize;
+
+        if (getTaskCount() > 0) {
+            throw new IllegalStateException(
+                    "can't be changed after a task is executed");
+        }
+
+        settings = new Settings(maxChannelMemorySize, settings.maxTotalMemorySize);
     }
 
     /**
      * Returns the maximum total size of the queued events for this pool.
      */
-    public int getMaxTotalMemorySize() {
-        return maxTotalMemorySize;
+    public long getMaxTotalMemorySize() {
+        return settings.maxTotalMemorySize;
     }
 
     /**
      * Sets the maximum total size of the queued events for this pool.
      * Specify {@code 0} to disable.
      */
-    public void setMaxTotalMemorySize(int maxTotalMemorySize) {
+    public void setMaxTotalMemorySize(long maxTotalMemorySize) {
         if (maxTotalMemorySize < 0) {
             throw new IllegalArgumentException(
                     "maxTotalMemorySize: " + maxTotalMemorySize);
         }
-        this.maxTotalMemorySize = maxTotalMemorySize;
+
+        if (getTaskCount() > 0) {
+            throw new IllegalStateException(
+                    "can't be changed after a task is executed");
+        }
+
+        settings = new Settings(settings.maxChannelMemorySize, maxTotalMemorySize);
     }
 
     @Override
@@ -223,14 +244,8 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
         boolean pause = increaseCounter(command);
         doExecute(command);
         if (pause) {
-            for (;;) {
-                try {
-                    semaphore.acquire();
-                    break;
-                } catch (InterruptedException e) {
-                    // Ignore.
-                }
-            }
+            //System.out.println("ACQUIRE");
+            semaphore.acquireUninterruptibly();
         }
     }
 
@@ -264,59 +279,82 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
         decreaseCounter(r);
     }
 
-    private boolean increaseCounter(Runnable task) {
-        if (isInterestOpsEvent(task)) {
+    @Override
+    protected void afterExecute(Runnable r, Throwable e) {
+        super.afterExecute(r, e);
+    }
+    protected boolean increaseCounter(Runnable task) {
+        if (!shouldCount(task)) {
             return false;
         }
 
+        Settings settings = this.settings;
+        long maxTotalMemorySize = settings.maxTotalMemorySize;
+        long maxChannelMemorySize = settings.maxChannelMemorySize;
+
         int increment = getObjectSizeEstimator().estimateSize(task);
-        int maxTotalMemorySize = getMaxTotalMemorySize();
-        int totalCounter = this.totalCounter.addAndGet(increment);
+        long totalCounter = this.totalCounter.addAndGet(increment);
 
         if (task instanceof ChannelEventRunnable) {
-            Channel channel = ((ChannelEventRunnable) task).getEvent().getChannel();
-            int maxChannelMemorySize = getMaxChannelMemorySize();
-            int channelCounter = getChannelCounter(channel).addAndGet(increment);
+            ChannelEventRunnable eventTask = (ChannelEventRunnable) task;
+            eventTask.estimatedSize = increment;
+            Channel channel = eventTask.getEvent().getChannel();
+            long channelCounter = getChannelCounter(channel).addAndGet(increment);
+            //System.out.println("IC: " + channelCounter + ", " + increment);
             if (maxChannelMemorySize != 0 && channelCounter >= maxChannelMemorySize && channel.isOpen()) {
                 if (channel.isReadable()) {
+                    //System.out.println("UNREADABLE");
                     channel.setReadable(false);
                 }
             }
         }
 
+        //System.out.println("I: " + totalCounter + ", " + increment);
         return maxTotalMemorySize != 0 && totalCounter >= maxTotalMemorySize;
     }
 
-    private void decreaseCounter(Runnable task) {
-        if (isInterestOpsEvent(task)) {
+    protected void decreaseCounter(Runnable task) {
+        if (!shouldCount(task)) {
             return;
         }
 
-        int increment = getObjectSizeEstimator().estimateSize(task);
-        int maxTotalMemorySize = getMaxTotalMemorySize();
-        int totalCounter = this.totalCounter.addAndGet(-increment);
+        Settings settings = this.settings;
+        long maxTotalMemorySize = settings.maxTotalMemorySize;
+        long maxChannelMemorySize = settings.maxChannelMemorySize;
 
-        if (maxTotalMemorySize == 0 || totalCounter < maxTotalMemorySize) {
+        int increment;
+        if (task instanceof ChannelEventRunnable) {
+            increment = ((ChannelEventRunnable) task).estimatedSize;
+        } else {
+            increment = getObjectSizeEstimator().estimateSize(task);
+        }
+
+        long totalCounter = this.totalCounter.addAndGet(-increment);
+
+        //System.out.println("D: " + totalCounter + ", " + increment);
+        if (maxTotalMemorySize != 0 && totalCounter + increment >= maxTotalMemorySize) {
+            //System.out.println("RELEASE");
             semaphore.release();
         }
 
         if (task instanceof ChannelEventRunnable) {
             Channel channel = ((ChannelEventRunnable) task).getEvent().getChannel();
-            int maxChannelMemorySize = getMaxChannelMemorySize();
-            int channelCounter = getChannelCounter(channel).addAndGet(-increment);
-            if ((maxChannelMemorySize == 0 || channelCounter < maxChannelMemorySize) && channel.isOpen()) {
+            long channelCounter = getChannelCounter(channel).addAndGet(-increment);
+            //System.out.println("DC: " + channelCounter + ", " + increment);
+            if (maxChannelMemorySize != 0 && channelCounter < maxChannelMemorySize && channel.isOpen()) {
                 if (!channel.isReadable()) {
+                    //System.out.println("READABLE");
                     channel.setReadable(true);
                 }
             }
         }
     }
 
-    private AtomicInteger getChannelCounter(Channel channel) {
-        AtomicInteger counter = channelCounters.get(channel);
+    private AtomicLong getChannelCounter(Channel channel) {
+        AtomicLong counter = channelCounters.get(channel);
         if (counter == null) {
-            counter = new AtomicInteger();
-            AtomicInteger oldCounter = channelCounters.putIfAbsent(channel, counter);
+            counter = new AtomicLong();
+            AtomicLong oldCounter = channelCounters.putIfAbsent(channel, counter);
             if (oldCounter != null) {
                 counter = oldCounter;
             }
@@ -329,16 +367,32 @@ public class MemoryAwareThreadPoolExecutor extends ThreadPoolExecutor {
         return counter;
     }
 
-    private static boolean isInterestOpsEvent(Runnable task) {
+    /**
+     * Returns {@code true} if and only if the specified {@code task} should
+     * be counted to limit the global and per-channel memory consumption.
+     * To override this method, you must call {@code super.shouldCount()} to
+     * make sure important tasks are not counted.
+     */
+    protected boolean shouldCount(Runnable task) {
         if (task instanceof ChannelEventRunnable) {
             ChannelEventRunnable r = (ChannelEventRunnable) task;
             if (r.getEvent() instanceof ChannelStateEvent) {
                 ChannelStateEvent e = (ChannelStateEvent) r.getEvent();
                 if (e.getState() == ChannelState.INTEREST_OPS) {
-                    return true;
+                    return false;
                 }
             }
         }
-        return false;
+        return true;
+    }
+
+    private static class Settings {
+        final long maxChannelMemorySize;
+        final long maxTotalMemorySize;
+
+        Settings(long maxChannelMemorySize, long maxTotalMemorySize) {
+            this.maxChannelMemorySize = maxChannelMemorySize;
+            this.maxTotalMemorySize = maxTotalMemorySize;
+        }
     }
 }

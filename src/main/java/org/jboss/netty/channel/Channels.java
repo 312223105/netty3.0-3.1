@@ -102,7 +102,7 @@ public class Channels {
     // future factory methods
 
     /**
-     * Creates a new uncancellable {@link ChannelFuture} for the specified
+     * Creates a new non-cancellable {@link ChannelFuture} for the specified
      * {@link Channel}.
      */
     public static ChannelFuture future(Channel channel) {
@@ -132,7 +132,7 @@ public class Channels {
     }
 
     /**
-     * Creates a new {@link ChannelFuture} which is already failed for the
+     * Creates a new {@link ChannelFuture} which has failed already for the
      * specified {@link Channel}.
      *
      * @param cause the cause of the failure
@@ -177,10 +177,10 @@ public class Channels {
     // event emission methods
 
     /**
-     * Fires a {@code "channelOpen"} event to the first
+     * Sends a {@code "channelOpen"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.  If the specified channel has a parent,
-     * a {@code "childChannelOpen"} event will be fired, too.
+     * a {@code "childChannelOpen"} event will be sent, too.
      */
     public static void fireChannelOpen(Channel channel) {
         if (channel.getParent() != null) {
@@ -193,10 +193,10 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelOpen"} event to the next
+     * Sends a {@code "channelOpen"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.  Please note that
-     * this method doesn't fire a {@code "childChannelOpen"} event unlike
+     * this method doesn't send a {@code "childChannelOpen"} event unlike
      * {@link #fireChannelOpen(Channel)} method.
      */
     public static void fireChannelOpen(
@@ -208,7 +208,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelBound"} event to the first
+     * Sends a {@code "channelBound"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.
      *
@@ -223,7 +223,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelBound"} event to the next
+     * Sends a {@code "channelBound"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      *
@@ -239,7 +239,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelConnected"} event to the first
+     * Sends a {@code "channelConnected"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.
      *
@@ -254,7 +254,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelConnected"} event to the next
+     * Sends a {@code "channelConnected"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      *
@@ -270,7 +270,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "messageReceived"} event to the first
+     * Sends a {@code "messageReceived"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.
      *
@@ -281,7 +281,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "messageReceived"} event to the first
+     * Sends a {@code "messageReceived"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel} belongs.
      *
@@ -297,7 +297,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "messageReceived"} event to the next
+     * Sends a {@code "messageReceived"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      *
@@ -310,7 +310,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "messageReceived"} event to the next
+     * Sends a {@code "messageReceived"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      *
@@ -326,7 +326,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelInterestChanged"} event to the first
+     * Sends a {@code "channelInterestChanged"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.
      *
@@ -341,7 +341,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelInterestChanged"} event to the next
+     * Sends a {@code "channelInterestChanged"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      *
@@ -358,7 +358,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelDisconnected"} event to the first
+     * Sends a {@code "channelDisconnected"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.
      */
@@ -370,7 +370,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelDisconnected"} event to the next
+     * Sends a {@code "channelDisconnected"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      */
@@ -382,7 +382,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelUnbound"} event to the first
+     * Sends a {@code "channelUnbound"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.
      */
@@ -392,7 +392,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelUnbound"} event to the next
+     * Sends a {@code "channelUnbound"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      */
@@ -404,7 +404,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelClosed"} event to the first
+     * Sends a {@code "channelClosed"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.
      */
@@ -419,7 +419,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "channelClosed"} event to the next
+     * Sends a {@code "channelClosed"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      */
@@ -432,7 +432,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "exceptionCaught"} event to the first
+     * Sends a {@code "exceptionCaught"} event to the first
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} of
      * the specified {@link Channel}.
      */
@@ -443,7 +443,7 @@ public class Channels {
     }
 
     /**
-     * Fires a {@code "exceptionCaught"} event to the next
+     * Sends a {@code "exceptionCaught"} event to the next
      * {@link ChannelUpstreamHandler} in the {@link ChannelPipeline} where
      * the specified {@link ChannelHandlerContext} belongs.
      */
@@ -500,6 +500,39 @@ public class Channels {
         }
         ctx.sendDownstream(new DefaultChannelStateEvent(
                 channel, future, ChannelState.BOUND, localAddress));
+    }
+
+    /**
+     * Sends a {@code "unbind"} request to the previous
+     * {@link ChannelDownstreamHandler} in the {@link ChannelPipeline} where
+     * the specified {@link ChannelHandlerContext} belongs.
+     *
+     * @param ctx     the context
+     * @param channel the channel to unbind
+     * @param future  the future which will be notified when the unbind
+     *                operation is done
+     */
+    public static void unbind(
+            ChannelHandlerContext ctx, Channel channel, ChannelFuture future) {
+        ctx.sendDownstream(new DefaultChannelStateEvent(
+                channel, future, ChannelState.BOUND, null));
+    }
+
+    /**
+     * Sends a {@code "unbind"} request to the last
+     * {@link ChannelDownstreamHandler} in the {@link ChannelPipeline} of
+     * the specified {@link Channel}.
+     *
+     * @param channel  the channel to unbind
+     *
+     * @return the {@link ChannelFuture} which will be notified when the
+     *         unbind operation is done
+     */
+    public static ChannelFuture unbind(Channel channel) {
+        ChannelFuture future = future(channel);
+        channel.getPipeline().sendDownstream(new DefaultChannelStateEvent(
+                channel, future, ChannelState.BOUND, null));
+        return future;
     }
 
     /**
@@ -628,7 +661,7 @@ public class Channels {
      */
     public static ChannelFuture setInterestOps(Channel channel, int interestOps) {
         validateInterestOps(interestOps);
-        validateDownstreamInterestOps(channel, interestOps);
+        interestOps = filterDownstreamInterestOps(interestOps);
 
         ChannelFuture future = future(channel);
         channel.getPipeline().sendDownstream(new DefaultChannelStateEvent(
@@ -650,7 +683,7 @@ public class Channels {
             ChannelHandlerContext ctx, Channel channel,
             ChannelFuture future, int interestOps) {
         validateInterestOps(interestOps);
-        validateDownstreamInterestOps(channel, interestOps);
+        interestOps = filterDownstreamInterestOps(interestOps);
 
         ctx.sendDownstream(
                 new DefaultChannelStateEvent(
@@ -733,10 +766,8 @@ public class Channels {
         }
     }
 
-    private static void validateDownstreamInterestOps(Channel channel, int interestOps) {
-        if (((channel.getInterestOps() ^ interestOps) & Channel.OP_WRITE) != 0) {
-            throw new IllegalArgumentException("OP_WRITE can't be modified by user.");
-        }
+    private static int filterDownstreamInterestOps(int interestOps) {
+        return interestOps & ~Channel.OP_WRITE;
     }
 
     private Channels() {

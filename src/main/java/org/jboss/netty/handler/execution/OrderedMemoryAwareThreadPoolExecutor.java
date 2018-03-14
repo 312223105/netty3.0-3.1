@@ -22,10 +22,7 @@
  */
 package org.jboss.netty.handler.execution;
 
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -78,7 +75,7 @@ public class OrderedMemoryAwareThreadPoolExecutor extends
      *                              Specify {@code 0} to disable.
      */
     public OrderedMemoryAwareThreadPoolExecutor(
-            int corePoolSize, int maxChannelMemorySize, int maxTotalMemorySize) {
+            int corePoolSize, long maxChannelMemorySize, long maxTotalMemorySize) {
         super(corePoolSize, maxChannelMemorySize, maxTotalMemorySize);
     }
 
@@ -94,7 +91,7 @@ public class OrderedMemoryAwareThreadPoolExecutor extends
      * @param unit                  the {@link TimeUnit} of {@code keepAliveTime}
      */
     public OrderedMemoryAwareThreadPoolExecutor(
-            int corePoolSize, int maxChannelMemorySize, int maxTotalMemorySize,
+            int corePoolSize, long maxChannelMemorySize, long maxTotalMemorySize,
             long keepAliveTime, TimeUnit unit) {
         super(corePoolSize, maxChannelMemorySize, maxTotalMemorySize,
                 keepAliveTime, unit);
@@ -113,7 +110,7 @@ public class OrderedMemoryAwareThreadPoolExecutor extends
      * @param threadFactory         the {@link ThreadFactory} of this pool
      */
     public OrderedMemoryAwareThreadPoolExecutor(
-            int corePoolSize, int maxChannelMemorySize, int maxTotalMemorySize,
+            int corePoolSize, long maxChannelMemorySize, long maxTotalMemorySize,
             long keepAliveTime, TimeUnit unit, ThreadFactory threadFactory) {
         super(corePoolSize, maxChannelMemorySize, maxTotalMemorySize,
                 keepAliveTime, unit, threadFactory);
@@ -133,7 +130,7 @@ public class OrderedMemoryAwareThreadPoolExecutor extends
      * @param objectSizeEstimator   the {@link ObjectSizeEstimator} of this pool
      */
     public OrderedMemoryAwareThreadPoolExecutor(
-            int corePoolSize, int maxChannelMemorySize, int maxTotalMemorySize,
+            int corePoolSize, long maxChannelMemorySize, long maxTotalMemorySize,
             long keepAliveTime, TimeUnit unit,
             ObjectSizeEstimator objectSizeEstimator, ThreadFactory threadFactory) {
         super(corePoolSize, maxChannelMemorySize, maxTotalMemorySize,
@@ -171,34 +168,61 @@ public class OrderedMemoryAwareThreadPoolExecutor extends
         return executor;
     }
 
+    @Override
+    protected boolean shouldCount(Runnable task) {
+        if (task instanceof ChildExecutor) {
+            return false;
+        }
+
+        return super.shouldCount(task);
+    }
+
     private class ChildExecutor implements Executor, Runnable {
-        private final Set<ChildExecutor> runningChildren = new HashSet<ChildExecutor>();
-        private final Queue<Runnable> tasks = new LinkedList<Runnable>();
+        private final LinkedList<Runnable> tasks = new LinkedList<Runnable>();
 
         ChildExecutor() {
             super();
         }
 
         public void execute(Runnable command) {
+            boolean needsExecution;
             synchronized (tasks) {
+                needsExecution = tasks.isEmpty();
                 tasks.add(command);
-                if (tasks.size() == 1 && runningChildren.add(this)) {
-                    doUnorderedExecute(this);
-                }
+            }
+
+            if (needsExecution) {
+                doUnorderedExecute(this);
             }
         }
 
         public void run() {
+            Thread thread = Thread.currentThread();
             for (;;) {
                 final Runnable task;
                 synchronized (tasks) {
-                    task = tasks.poll();
-                    if (task == null) {
-                        runningChildren.remove(this);
-                        return;
+                    task = tasks.getFirst();
+                }
+
+                boolean ran = false;
+                OrderedMemoryAwareThreadPoolExecutor.this.beforeExecute(thread, task);
+                try {
+                    task.run();
+                    ran = true;
+                    OrderedMemoryAwareThreadPoolExecutor.this.afterExecute(task, null);
+                } catch (RuntimeException e) {
+                    if (!ran) {
+                        OrderedMemoryAwareThreadPoolExecutor.this.afterExecute(task, e);
+                    }
+                    throw e;
+                } finally {
+                    synchronized (tasks) {
+                        tasks.removeFirst();
+                        if (tasks.isEmpty()) {
+                            break;
+                        }
                     }
                 }
-                task.run();
             }
         }
     }

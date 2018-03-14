@@ -34,6 +34,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelConfig;
 import org.jboss.netty.channel.ChannelException;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
@@ -48,7 +49,7 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 
 /**
- * A helper class which creates a new server-side {@link Channel} and accept
+ * A helper class which creates a new server-side {@link Channel} and accepts
  * incoming connections.
  *
  * <h3>Parent channel and its children</h3>
@@ -79,6 +80,9 @@ import org.jboss.netty.channel.SimpleChannelHandler;
  * b.setOption("child.tcpNoDelay", true);
  * b.setOption("child.receiveBufferSize", 1048576);
  * </pre>
+ *
+ * For the detailed list of available options, please refer to
+ * {@link ChannelConfig} and its sub-types.
  *
  * <h3>Configuring a parent channel pipeline</h3>
  *
@@ -123,6 +127,15 @@ import org.jboss.netty.channel.SimpleChannelHandler;
  *   // Create a new pipeline for a new child channel and configure it here ...
  * }
  * </pre>
+ *
+ * <h3>Applying different settings for different {@link Channel}s</h3>
+ *
+ * {@link ServerBootstrap} is just a helper class.  It neither allocates nor
+ * manages any resources.  What manages the resources is the
+ * {@link ChannelFactory} implementation you specified in the constructor of
+ * {@link ServerBootstrap}.  Therefore, it is OK to create as many
+ * {@link ServerBootstrap} instances as you want to apply different settings
+ * for different {@link Channel}s.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)
@@ -175,7 +188,7 @@ public class ServerBootstrap extends Bootstrap {
     }
 
     /**
-     * Creates a new channel which is bound to the local address which were
+     * Creates a new channel which is bound to the local address which was
      * specified in the current {@code "localAddress"} option.  This method is
      * similar to the following code:
      *

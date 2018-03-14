@@ -31,6 +31,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelConfig;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -58,6 +59,9 @@ import org.jboss.netty.channel.SimpleChannelHandler;
  * b.setOption("tcpNoDelay", true);
  * b.setOption("receiveBufferSize", 1048576);
  * </pre>
+ *
+ * For the detailed list of available options, please refer to
+ * {@link ChannelConfig} and its sub-types
  *
  * <h3>Configuring a channel pipeline</h3>
  *
@@ -89,6 +93,15 @@ import org.jboss.netty.channel.SimpleChannelHandler;
  *   // Create a new pipeline for a new channel and configure it here ...
  * }
  * </pre>
+ *
+ * <h3>Applying different settings for different {@link Channel}s</h3>
+ *
+ * {@link ClientBootstrap} is just a helper class.  It neither allocates nor
+ * manages any resources.  What manages the resources is the
+ * {@link ChannelFactory} implementation you specified in the constructor of
+ * {@link ClientBootstrap}.  Therefore, it is OK to create as many
+ * {@link ClientBootstrap} instances as you want to apply different settings
+ * for different {@link Channel}s.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
  * @author Trustin Lee (tlee@redhat.com)

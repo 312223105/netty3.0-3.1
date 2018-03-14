@@ -26,7 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.netty.channel.AbstractChannel;
 import org.jboss.netty.channel.Channel;
@@ -35,6 +35,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelSink;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.util.LinkedTransferQueue;
 
 /**
  * @author The Netty Project (netty-dev@lists.jboss.org)
@@ -49,8 +50,12 @@ abstract class NioSocketChannel extends AbstractChannel
     final SocketChannel socket;
     private final NioSocketChannelConfig config;
 
-    final Queue<MessageEvent> writeBuffer =
-        new ConcurrentLinkedQueue<MessageEvent>();
+    final Object interestOpsLock = new Object();
+    final Object writeLock = new Object();
+
+    final AtomicBoolean writeTaskInTaskQueue = new AtomicBoolean();
+    final Runnable writeTask = new WriteTask();
+    final Queue<MessageEvent> writeBuffer = new LinkedTransferQueue<MessageEvent>();
     MessageEvent currentWriteEvent;
     int currentWriteIndex;
 
@@ -108,6 +113,18 @@ abstract class NioSocketChannel extends AbstractChannel
             return super.write(message, null);
         } else {
             return getUnsupportedOperationFuture();
+        }
+    }
+
+    private class WriteTask implements Runnable {
+
+        WriteTask() {
+            super();
+        }
+
+        public void run() {
+            writeTaskInTaskQueue.set(false);
+            NioWorker.write(NioSocketChannel.this, false);
         }
     }
 }
